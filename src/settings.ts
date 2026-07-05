@@ -2,6 +2,7 @@
 // 系统设置模块 — S3 配置 / 备份 / 缓存 / 测试
 // ============================================================
 
+import { AwsClient } from 'aws4fetch';
 import type { Context } from 'hono';
 import type { App, S3ConnectionConfig } from './types';
 import { getJSON, putJSON, listObjects, saveRuntimeConfig, healthCheck } from './s3';
@@ -79,7 +80,55 @@ export async function getS3Config(c: Context<App>) {
   });
 }
 
-/** PUT /api/settings/s3 — 保存运行时 S3 配置 */
+/** 用指定配置测试 S3 连接 — 写测试文件并读回验证 */
+async function testConnectionWithConfig(config: S3ConnectionConfig): Promise<{ ok: boolean; error?: string; details?: Record<string, unknown> }> {
+  const details: Record<string, unknown> = {};
+  try {
+    const client = new AwsClient({
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+      service: 's3',
+      region: config.region,
+    });
+
+    // 写测试文件
+    const testKey = `_config_validate_/test_${Date.now()}.json`;
+    const writeUrl = `${config.endpoint}/${config.bucket}/${testKey}`;
+    const writeRes = await client.fetch(writeUrl, {
+      method: 'PUT',
+      body: JSON.stringify({ ping: true }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    details.write_ok = writeRes.ok;
+    if (!writeRes.ok) {
+      details.write_status = writeRes.status;
+      return { ok: false, error: `写入测试文件失败 (HTTP ${writeRes.status})`, details };
+    }
+
+    // 读回验证
+    const readRes = await client.fetch(writeUrl, { method: 'GET' });
+    details.read_ok = readRes.ok;
+    if (!readRes.ok) {
+      details.read_status = readRes.status;
+      return { ok: false, error: `读取测试文件失败 (HTTP ${readRes.status})`, details };
+    }
+
+    const data: { ping?: boolean } = await readRes.json();
+    details.content_valid = data?.ping === true;
+    if (!details.content_valid) {
+      return { ok: false, error: '测试文件内容校验失败', details };
+    }
+
+    // 清理测试文件
+    await client.fetch(writeUrl, { method: 'DELETE' }).catch(() => {});
+
+    return { ok: true, details };
+  } catch (err) {
+    return { ok: false, error: String(err), details };
+  }
+}
+
+/** PUT /api/settings/s3 — 保存运行时 S3 配置（先验证再保存） */
 export async function updateS3Config(c: Context<App>) {
   const body = await c.req.json<{
     endpoint?: string;
@@ -101,10 +150,31 @@ export async function updateS3Config(c: Context<App>) {
     bucket: body.bucket,
   };
 
-  const ok = await saveRuntimeConfig(c.env, config);
-  if (!ok) return c.json({ success: false, error: '保存 S3 配置失败' }, 500);
+  // ★ 关键：先验证新配置能正常工作，再保存
+  const testResult = await testConnectionWithConfig(config);
+  if (!testResult.ok) {
+    return c.json({
+      success: false,
+      error: `新配置验证失败，未保存。${testResult.error || '无法连接到该 S3 端点，请检查配置'}`,
+      data: { test_results: testResult.details },
+    }, 400);
+  }
 
-  return c.json({ success: true, data: { source: 'runtime', ...config, secret_access_key: '********' } });
+  const ok = await saveRuntimeConfig(c.env, config);
+  if (!ok) return c.json({ success: false, error: '保存 S3 配置失败，旧配置仍有效' }, 500);
+
+  return c.json({
+    success: true,
+    data: {
+      source: 'runtime',
+      endpoint: config.endpoint,
+      access_key_id: config.accessKeyId,
+      secret_access_key: '********',
+      region: config.region,
+      bucket: config.bucket,
+      validated: true,
+    },
+  });
 }
 
 /** POST /api/settings/test — 测试 S3 */
