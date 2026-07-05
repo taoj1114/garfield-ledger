@@ -151,6 +151,109 @@ export async function suggestCategories(records: Partial<LedgerRecord>[]) {
   return request('POST', '/ai/suggest-categories', { records });
 }
 
+// ---- 账户管理 ----
+export interface Account {
+  id: string;
+  name: string;
+  type: 'asset' | 'income' | 'expense' | 'liability';
+  currency: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function getAccounts() {
+  return request<Account[]>('GET', '/accounts');
+}
+
+export async function createAccount(data: { name: string; type: Account['type']; currency?: string }) {
+  return request<Account>('POST', '/accounts', data);
+}
+
+export async function updateAccount(id: string, data: Partial<Account>) {
+  return request<Account>('PUT', `/accounts/${id}`, data);
+}
+
+export async function deleteAccount(id: string) {
+  return request<void>('DELETE', `/accounts/${id}`);
+}
+
+// ---- 复式交易 ----
+export interface Entry {
+  account_id: string;
+  debit: number;
+  credit: number;
+  description?: string;
+}
+
+export interface Transaction {
+  id: string;
+  description: string;
+  timestamp: string;
+  entries: (Entry & { account_name?: string; account_type?: string })[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionsResult {
+  transactions: Transaction[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export async function getTransactions(params?: Record<string, string>) {
+  const qs = new URLSearchParams(params).toString();
+  return request<TransactionsResult>('GET', `/transactions${qs ? '?' + qs : ''}`);
+}
+
+export async function getTransaction(id: string) {
+  return request<Transaction>('GET', `/transactions/${id}`);
+}
+
+export async function createTransaction(data: { description: string; timestamp?: string; entries: Entry[] }) {
+  return request<Transaction>('POST', '/transactions', data);
+}
+
+export async function updateTransaction(id: string, data: Partial<Transaction>) {
+  return request<Transaction>('PUT', `/transactions/${id}`, data);
+}
+
+export async function deleteTransaction(id: string) {
+  return request<void>('DELETE', `/transactions/${id}`);
+}
+
+// ---- 报表 ----
+export interface AccountBalance {
+  account: Account;
+  balance: number;
+}
+
+export interface BalanceSheet {
+  assets: AccountBalance[];
+  total_assets: number;
+  liabilities: AccountBalance[];
+  total_liabilities: number;
+  equity: number;
+}
+
+export async function getBalances() {
+  return request<AccountBalance[]>('GET', '/reports/balances');
+}
+
+export async function getBalanceSheet() {
+  return request<BalanceSheet>('GET', '/reports/balance-sheet');
+}
+
+export async function getIncomeStatement() {
+  return request<{ incomes: AccountBalance[]; expenses: AccountBalance[]; total_income: number; total_expense: number; net_income: number }>('GET', '/reports/income-statement');
+}
+
+// ---- 迁移 ----
+export async function migrateFromLegacy() {
+  return request<{ migrated: number; skipped: number; total_old: number; message: string }>('POST', '/migrate');
+}
+
 // ---- CSV 导入导出 ----
 export function exportCsv(records: LedgerRecord[]) {
   const headers = '时间,来源,金额,货币,分类,备注';

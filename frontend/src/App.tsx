@@ -2,10 +2,12 @@ import { useState, useEffect } from 'preact/compat';
 import { isLoggedIn, getUsername } from './api';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import TransactionsPage from './pages/TransactionsPage';
+import AccountsPage from './pages/AccountsPage';
 import AiChatPage from './pages/AiChatPage';
 import AiImportPage from './pages/AiImportPage';
 
-type Page = 'dashboard' | 'ai' | 'import';
+type Page = 'dashboard' | 'txns' | 'accounts' | 'ai' | 'import';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -34,13 +36,14 @@ export default function App() {
 
   const tabs: { key: Page; label: string }[] = [
     { key: 'dashboard', label: '📊 概览' },
+    { key: 'txns', label: '📒 记账' },
+    { key: 'accounts', label: '💳 账户' },
     { key: 'ai', label: '🤖 AI 分析' },
-    { key: 'import', label: '🧠 智能导入' },
+    { key: 'import', label: '🧠 导入' },
   ];
 
   return (
     <div>
-      {/* 导航栏 */}
       <nav className="navbar">
         <div className="navbar-inner">
           <span className="navbar-brand">📒 记账本</span>
@@ -61,9 +64,10 @@ export default function App() {
         </div>
       </nav>
 
-      {/* 页面 */}
       <div className="container">
         {page === 'dashboard' && <DashboardPage />}
+        {page === 'txns' && <TransactionsPage />}
+        {page === 'accounts' && <AccountsPage />}
         {page === 'ai' && <AiChatPage />}
         {page === 'import' && <AiImportPage />}
       </div>

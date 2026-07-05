@@ -2,8 +2,66 @@
 // garfield-ledger - 共享类型定义
 // ============================================================
 
-/** 记账记录 */
-export interface LedgerRecord {
+/** 账户类型 */
+export type AccountType = 'asset' | 'income' | 'expense' | 'liability';
+
+/** 账户 */
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+/** 会计分录 */
+export interface Entry {
+  account_id: string;
+  debit: number;
+  credit: number;
+  description?: string;
+}
+
+/** 交易（复式记账） */
+export interface Transaction {
+  id: string;
+  description: string;
+  timestamp: string;
+  entries: Entry[];
+  created_at: string;
+  updated_at: string;
+}
+
+/** 带账户名的分录（前端用） */
+export interface EntryWithAccount extends Entry {
+  account_name?: string;
+  account_type?: AccountType;
+}
+
+/** 交易 + 展开的分录 */
+export interface TransactionWithEntries extends Transaction {
+  entries: EntryWithAccount[];
+}
+
+/** 账户余额 */
+export interface AccountBalance {
+  account: Account;
+  balance: number;
+}
+
+/** 资产负债表 */
+export interface BalanceSheet {
+  assets: AccountBalance[];
+  total_assets: number;
+  liabilities: AccountBalance[];
+  total_liabilities: number;
+  equity: number;
+}
+
+/** 旧记账记录（兼容迁移用） */
+export interface LegacyRecord {
   id: string;
   source: string;
   amount: number;
@@ -13,6 +71,15 @@ export interface LedgerRecord {
   timestamp: string;
   created_at: string;
   updated_at: string;
+}
+
+/** 统计数据（旧版兼容） */
+export interface StatsData {
+  total_records: number;
+  total_amount: number;
+  currency_breakdown: Record<string, number>;
+  category_breakdown: Record<string, number>;
+  monthly_summary: Record<string, number>;
 }
 
 /** 用户信息 */
@@ -38,15 +105,6 @@ export interface ChatSession {
   updated_at: string;
 }
 
-/** 统计数据 */
-export interface StatsData {
-  total_records: number;
-  total_amount: number;
-  currency_breakdown: Record<string, number>;
-  category_breakdown: Record<string, number>;
-  monthly_summary: Record<string, number>;
-}
-
 /** JWT 载荷 */
 export interface JwtPayload {
   user_id: string;
@@ -54,33 +112,18 @@ export interface JwtPayload {
   exp: number;
 }
 
-/** 导入分析 - 识别结果 */
+/** 导入分析结果 */
 export interface ImportAnalysisResult {
-  /** 数据来源描述 (如: 微信账单 / 支付宝账单 / 银行流水 / 手动记账) */
   source_type: string;
-  /** 总条数 */
   total: number;
-  /** 解析后的记录列表 */
-  records: Partial<LedgerRecord>[];
-  /** 分析说明 */
+  records: Partial<LegacyRecord>[];
   description: string;
 }
 
 /** 导入分析请求 */
 export interface AnalyzeImportRequest {
-  /** 待分析的原始文本 */
   text: string;
-  /** 可选指定格式 (csv / json / text) */
   format?: string;
-}
-
-/** 分类建议结果 */
-export interface CategorySuggestion {
-  record_id: string;
-  source: string;
-  suggested_category: string;
-  confidence: number;
-  reason: string;
 }
 
 /** 环境变量绑定 */
@@ -91,13 +134,10 @@ export interface EnvBindings {
   S3_REGION: string;
   S3_BUCKET: string;
   JWT_SECRET: string;
-  // AI 通用配置
   AI_PROVIDER?: string;
-  // OpenAI 兼容参数
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
   OPENAI_MODEL?: string;
-  // Gemini 参数
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
   ASSETS: Fetcher;

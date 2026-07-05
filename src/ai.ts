@@ -4,7 +4,7 @@
 
 import type { Context } from 'hono';
 import type {
-  App, LedgerRecord, ChatMessage, ChatSession,
+  App, LegacyRecord, ChatMessage, ChatSession,
   AnalyzeImportRequest, ImportAnalysisResult,
 } from './types';
 import { getJSON, putJSON } from './s3';
@@ -23,7 +23,7 @@ async function saveChats(env: App['Bindings'], userId: string, chats: ChatSessio
 // ============================================================
 // 记账分析系统提示
 // ============================================================
-function buildAnalysisPrompt(records: LedgerRecord[]): string {
+function buildAnalysisPrompt(records: LegacyRecord[]): string {
   const catStats: Record<string, { count: number; amount: number }> = {};
   const monthlyTrend: Record<string, number> = {};
   let totalAmount = 0;
@@ -112,7 +112,7 @@ export async function aiChat(c: Context<App>) {
     return c.json({ success: false, error: '请输入消息内容' }, 400);
   }
 
-  const records = (await getJSON<LedgerRecord[]>(c.env, user.user_id, 'records.json')) || [];
+  const records = (await getJSON<LegacyRecord[]>(c.env, user.user_id, 'records.json')) || [];
   const chats = await getChats(c.env, user.user_id);
   const now = new Date().toISOString();
 
@@ -204,7 +204,7 @@ export async function analyzeImport(c: Context<App>) {
 // POST /api/ai/suggest-categories - AI 分类建议
 // ============================================================
 export async function suggestCategories(c: Context<App>) {
-  const body = await c.req.json<{ records: Partial<LedgerRecord>[] }>();
+  const body = await c.req.json<{ records: Partial<LegacyRecord>[] }>();
   if (!body.records?.length) {
     return c.json({ success: false, error: '请提供待分类的记录' }, 400);
   }

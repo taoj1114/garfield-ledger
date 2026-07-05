@@ -3,19 +3,19 @@
 // ============================================================
 
 import type { Context } from 'hono';
-import type { App, LedgerRecord, StatsData } from './types';
+import type { App, LegacyRecord, StatsData } from './types';
 import { getJSON, putJSON } from './s3';
 
 const RECORDS_FILE = 'records.json';
 
 /** 获取用户的所有记录 */
-async function getRecords(env: App['Bindings'], userId: string): Promise<LedgerRecord[]> {
-  const records = await getJSON<LedgerRecord[]>(env, userId, RECORDS_FILE);
+async function getRecords(env: App['Bindings'], userId: string): Promise<LegacyRecord[]> {
+  const records = await getJSON<LegacyRecord[]>(env, userId, RECORDS_FILE);
   return records || [];
 }
 
 /** 保存用户的所有记录 */
-async function saveRecords(env: App['Bindings'], userId: string, records: LedgerRecord[]): Promise<boolean> {
+async function saveRecords(env: App['Bindings'], userId: string, records: LegacyRecord[]): Promise<boolean> {
   return putJSON(env, userId, RECORDS_FILE, records);
 }
 
@@ -52,14 +52,14 @@ export async function listRecords(c: Context<App>) {
 /** POST /api/records - 添加记录 */
 export async function createRecord(c: Context<App>) {
   const user = c.get('user');
-  const body = await c.req.json<Partial<LedgerRecord>>();
+  const body = await c.req.json<Partial<LegacyRecord>>();
 
   if (!body.source || body.amount === undefined || !body.currency) {
     return c.json({ success: false, error: '缺少必填字段: source, amount, currency' }, 400);
   }
 
   const now = new Date().toISOString();
-  const record: LedgerRecord = {
+  const record: LegacyRecord = {
     id: crypto.randomUUID(),
     source: body.source,
     amount: Number(body.amount),
@@ -101,7 +101,7 @@ export async function updateRecord(c: Context<App>) {
   const id = c.req.param('id');
   if (!id) return c.json({ success: false, error: '缺少记录 ID' }, 400);
 
-  const body = await c.req.json<Partial<LedgerRecord>>();
+  const body = await c.req.json<Partial<LegacyRecord>>();
   const records = await getRecords(c.env, user.user_id);
   const index = records.findIndex(r => r.id === id);
 
@@ -175,7 +175,7 @@ export async function getCategories(c: Context<App>) {
 /** POST /api/records/import - 批量导入 */
 export async function importRecords(c: Context<App>) {
   const user = c.get('user');
-  const body = await c.req.json<{ records: Partial<LedgerRecord>[] }>();
+  const body = await c.req.json<{ records: Partial<LegacyRecord>[] }>();
 
   if (!body.records || !Array.isArray(body.records) || body.records.length === 0) {
     return c.json({ success: false, error: '请提供要导入的记录数组' }, 400);
@@ -183,7 +183,7 @@ export async function importRecords(c: Context<App>) {
 
   const existing = await getRecords(c.env, user.user_id);
   const now = new Date().toISOString();
-  const newRecords: LedgerRecord[] = [];
+  const newRecords: LegacyRecord[] = [];
 
   for (const r of body.records) {
     if (!r.source || r.amount === undefined || !r.currency) continue;
