@@ -6,13 +6,24 @@ compatibility_flags = ["nodejs_compat"]
 # 静态资源目录 (Vite 构建输出)
 assets = { directory = "./dist", binding = "ASSETS" }
 
+# --- KV 命名空间（可选）---
+# 用于存储运行时 S3 配置，消除 bootstrap 循环依赖。
+# 如不配置，自动回退到 _config/s3.json（S3 存储）。
+# 创建: Cloudflare Dashboard → Workers & Pages → KV → 创建命名空间
+# 命名空间名: LEDGER_CONFIG，绑定名一致
+# [[kv_namespaces]]
+# binding = "LEDGER_CONFIG"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-ns-id"
+
 # S3 兼容存储配置 (通过环境变量传入)
 [vars]
 S3_REGION = "auto"
 S3_BUCKET = "garfield-ledger"
 
 # AI 模型配置 (通过环境变量传入)
-AI_PROVIDER = "gemini"
-
+# AI_PROVIDER = "openai"
 # 环境变量 (通过 .dev.vars 或 Cloudflare Dashboard 设置)
-# S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, JWT_SECRET, GEMINI_API_KEY
+# S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, JWT_SECRET
+# OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
+# GEMINI_API_KEY, GEMINI_MODEL

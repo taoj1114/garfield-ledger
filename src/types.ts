@@ -109,6 +109,8 @@ export interface EnvBindings {
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
   ASSETS: Fetcher;
+  /** KV 命名空间（可选，用于运行时配置存储） */
+  LEDGER_CONFIG?: KVNamespace;
 }
 
 /** Hono App 类型 */
