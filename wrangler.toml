@@ -3,8 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 静态资源目录
-assets = { directory = "./public", binding = "ASSETS" }
+# 静态资源目录 (Vite 构建输出)
+assets = { directory = "./dist", binding = "ASSETS" }
 
 # S3 兼容存储配置 (通过环境变量传入)
 [vars]

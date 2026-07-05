@@ -70,6 +70,7 @@ body {
   border-radius: var(--radius);
   font-size: 14px;
   transition: all 0.2s;
+  cursor: pointer;
 }
 .nav-link:hover, .nav-link.active {
   color: var(--primary);
@@ -105,10 +106,7 @@ body {
   color: white;
   border-color: var(--primary);
 }
-.btn-primary:hover {
-  background: var(--primary-hover);
-  color: white;
-}
+.btn-primary:hover { background: var(--primary-hover); color: white; }
 .btn-danger {
   background: var(--danger);
   color: white;
@@ -145,14 +143,12 @@ body {
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* ===== 页面 ===== */
-.page { display: none; padding: 24px 0; }
-.page.active { display: block; }
-
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding-top: 24px;
 }
 .page-title { font-size: 24px; font-weight: 700; }
 
@@ -292,36 +288,6 @@ tr:hover { background: #f1f5f9; }
 }
 .search-input:focus { outline: none; border-color: var(--primary); }
 
-/* ===== 提示 ===== */
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: var(--radius);
-  color: white;
-  font-size: 14px;
-  z-index: 300;
-  animation: slideIn 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.toast.success { background: var(--success); }
-.toast.error { background: var(--danger); }
-.toast.info { background: var(--primary); }
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-/* ===== 空状态 ===== */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-}
-.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
-.empty-state-text { font-size: 16px; }
-
 /* ===== 标签 ===== */
 .tag {
   display: inline-block;
@@ -334,6 +300,18 @@ tr:hover { background: #f1f5f9; }
   background: #eef2ff;
   color: var(--primary);
 }
+
+/* ===== 空状态 ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state-text { font-size: 16px; }
+
+/* ===== 实用 ===== */
+.import-hidden { display: none; }
 
 /* ===== 响应式 ===== */
 @media (max-width: 640px) {

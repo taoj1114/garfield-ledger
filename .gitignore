@@ -5,3 +5,4 @@ dist/
 worker-build/
 *.log
 .env
+frontend/node_modules/

@@ -1,0 +1,21 @@
+{
+  "name": "garfield-ledger-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "preact": "^10.25.0",
+    "@preact/compat": "^18.3.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.0",
+    "@preact/preset-vite": "^2.9.0",
+    "typescript": "^5.7.0"
+  }
+}

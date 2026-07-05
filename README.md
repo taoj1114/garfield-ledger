@@ -18,7 +18,7 @@
 |------|------|
 | **运行时** | Cloudflare Workers |
 | **框架** | Hono (TypeScript) |
-| **前端** | 原生 HTML/CSS/JS SPA |
+| **前端** | Vite + React (via preact/compat) |
 | **存储** | S3 兼容对象存储 (Garage S3 / AWS S3 / MinIO) |
 | **认证** | JWT (jose) + PBKDF2 密码哈希 |
 | **AI** | Google Gemini API |
@@ -28,23 +28,29 @@
 
 ```
 garfield-ledger/
-├── src/                  # API Worker 源码
-│   ├── index.ts          # 主入口 (Hono 路由)
-│   ├── auth.ts           # 认证模块 (密码哈希 + JWT)
-│   ├── records.ts        # 记账记录 CRUD
-│   ├── ai.ts             # AI 分析模块 (Gemini)
-│   ├── s3.ts             # S3 存储客户端
-│   ├── middleware.ts     # JWT 认证中间件
-│   └── types.ts          # 共享类型定义
-├── public/               # 前端静态资源
-│   ├── index.html        # 主页面 (SPA)
-│   ├── css/style.css     # 样式
-│   └── js/
-│       ├── api.js        # API 客户端
-│       ├── auth.js       # 登录/注册逻辑
-│       ├── records.js    # 记账管理 UI
-│       ├── ai.js         # AI 聊天 UI
-│       └── app.js        # 路由 & 初始化
+├── frontend/              # Vite + React (via preact/compat)
+│   ├── src/
+│   │   ├── main.tsx       # 入口
+│   │   ├── App.tsx        # 主应用 (路由 + 导航)
+│   │   ├── api.ts         # API 客户端 + 类型
+│   │   ├── style.css      # 全局样式
+│   │   └── pages/
+│   │       ├── LoginPage.tsx     # 登录/注册
+│   │       ├── DashboardPage.tsx # 概览 + 记账管理
+│   │       └── AiChatPage.tsx    # AI 分析聊天
+│   ├── index.html
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── dist/                  # Vite 构建输出 (自动生成)
+├── src/                   # API Worker 源码
+│   ├── index.ts           # 主入口 (Hono 路由)
+│   ├── auth.ts            # 认证模块 (PBKDF2 + JWT)
+│   ├── records.ts         # 记账记录 CRUD
+│   ├── ai.ts              # AI 分析模块 (Gemini)
+│   ├── s3.ts              # S3 存储客户端 (aws4fetch)
+│   ├── middleware.ts      # JWT 认证中间件
+│   └── types.ts           # 共享类型定义
 ├── wrangler.toml         # Cloudflare Workers 配置
 ├── package.json
 ├── tsconfig.json
@@ -79,19 +85,25 @@ cp .env.example .dev.vars
 ### 2. 本地开发
 
 ```bash
-# 安装依赖
+# 安装根目录依赖 (Worker)
 npm install
 
-# 启动开发服务器
+# 安装前端依赖
+cd frontend && npm install && cd ..
+
+# 启动开发服务器 (前端 + Worker)
 npm run dev
 
 # 访问 http://localhost:8787
 ```
 
-### 3. 部署到 Cloudflare Workers
+### 3. 构建 & 部署
 
 ```bash
-# 部署
+# 构建前端
+npm run build:frontend
+
+# 部署到 Cloudflare Workers
 npm run deploy
 
 # 部署后访问 https://garfield-ledger.<你的子域名>.workers.dev
