@@ -11,10 +11,10 @@ assets = { directory = "./dist", binding = "ASSETS" }
 # 如不配置，自动回退到 _config/s3.json（S3 存储）。
 # 创建: Cloudflare Dashboard → Workers & Pages → KV → 创建命名空间
 # 命名空间名: LEDGER_CONFIG，绑定名一致
-# [[kv_namespaces]]
-# binding = "LEDGER_CONFIG"
-# id = "your-kv-namespace-id"
-# preview_id = "your-preview-ns-id"
+[[kv_namespaces]]
+binding = "LEDGER_CONFIG"
+id = "1e80a2fee7594dc8a90c0bdebc28944f"
+preview_id = "1e80a2fee7594dc8a90c0bdebc28944f"
 
 # S3 兼容存储配置 (通过环境变量传入)
 [vars]
