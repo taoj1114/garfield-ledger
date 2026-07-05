@@ -7,11 +7,28 @@ import type {
   App, ChatMessage, ChatSession,
   AnalyzeImportRequest, ImportAnalysisResult, Transaction, Account,
 } from './types';
+import { createAiClient, type AiRuntimeConfig } from './ai-client';
 import { getJSON, putJSON } from './s3';
-import { createAiClient } from './ai-client';
 import { ensureDefaultAccounts } from './accounts';
 
 const CHATS_FILE = 'chats.json';
+
+/** 读取 AI 运行时配置（settings 覆盖 env vars） */
+async function getAiRuntimeConfig(env: App['Bindings']): Promise<AiRuntimeConfig> {
+  const settings = await getJSON<{
+    ai_provider?: string; openai_api_key?: string; openai_base_url?: string;
+    openai_model?: string; gemini_api_key?: string; gemini_model?: string;
+  }>(env, '_global', 'config/settings.json');
+  if (!settings) return {};
+  return {
+    ai_provider: settings.ai_provider || env.AI_PROVIDER,
+    openai_api_key: settings.openai_api_key || env.OPENAI_API_KEY,
+    openai_base_url: settings.openai_base_url || env.OPENAI_BASE_URL,
+    openai_model: settings.openai_model || env.OPENAI_MODEL,
+    gemini_api_key: settings.gemini_api_key || env.GEMINI_API_KEY,
+    gemini_model: settings.gemini_model || env.GEMINI_MODEL,
+  };
+}
 
 async function getChats(env: App['Bindings'], userId: string): Promise<ChatSession[]> {
   return (await getJSON<ChatSession[]>(env, userId, CHATS_FILE)) || [];
@@ -119,7 +136,7 @@ export async function aiChat(c: Context<App>) {
   };
 
   try {
-    const client = createAiClient(c.env);
+    const client = createAiClient(c.env, await getAiRuntimeConfig(c.env));
     const systemPrompt = await buildAnalysisPrompt(c.env, user.user_id);
     const history = currentSession.messages.slice(-20).map(m => ({
       role: m.role as 'user' | 'assistant',
@@ -157,7 +174,7 @@ export async function analyzeImport(c: Context<App>) {
   if (!body.text?.trim()) return c.json({ success: false, error: '请提供数据文本' }, 400);
 
   try {
-    const client = createAiClient(c.env);
+    const client = createAiClient(c.env, await getAiRuntimeConfig(c.env));
     const formatHint = body.format ? `\n\n提示: 输入格式为 ${body.format}` : '';
     const reply = await client.chat([
       { role: 'system', content: IMPORT_ANALYSIS_PROMPT },

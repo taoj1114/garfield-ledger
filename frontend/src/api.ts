@@ -195,6 +195,33 @@ export async function getSettingsStats() {
   return request<{ total_files: number; json_files: number; user_count: number; file_types: Record<string, number>; backup_folder: string }>('GET', '/settings/stats');
 }
 
+// ---- AI 配置 ----
+export async function getAiConfigApi() {
+  return request<{
+    ai_provider?: string;
+    openai_api_key?: string;
+    openai_base_url?: string;
+    openai_model?: string;
+    gemini_api_key?: string;
+    gemini_model?: string;
+  }>('GET', '/settings/ai');
+}
+
+export async function updateAiConfigApi(data: {
+  ai_provider?: string;
+  openai_api_key?: string;
+  openai_base_url?: string;
+  openai_model?: string;
+  gemini_api_key?: string;
+  gemini_model?: string;
+}) {
+  return request('PUT', '/settings/ai', data);
+}
+
+export async function testAiConnectionApi() {
+  return request<{ reply: string; passed: boolean }>('POST', '/settings/ai/test');
+}
+
 // ---- S3 运行时配置 ----
 export async function getS3ConfigApi() {
   return request<{

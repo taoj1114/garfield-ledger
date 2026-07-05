@@ -3,6 +3,7 @@ import { cacheClear } from '../cache';
 import {
   getSettings, updateSettings, testSettings,
   getS3ConfigApi, updateS3ConfigApi,
+  getAiConfigApi, updateAiConfigApi, testAiConnectionApi,
 } from '../api';
 
 interface SettingsData {
@@ -26,6 +27,17 @@ export default function SettingsPage() {
   const [s3Region, setS3Region] = useState('auto');
   const [savingS3, setSavingS3] = useState(false);
   const [s3SaveResult, setS3SaveResult] = useState('');
+  // AI 配置
+  const [aiProvider, setAiProvider] = useState('openai');
+  const [aiOpenaiKey, setAiOpenaiKey] = useState('');
+  const [aiBaseUrl, setAiBaseUrl] = useState('');
+  const [aiModel, setAiModel] = useState('');
+  const [aiGeminiKey, setAiGeminiKey] = useState('');
+  const [aiGeminiModel, setAiGeminiModel] = useState('');
+  const [hasAiKey, setHasAiKey] = useState(false);
+  const [testingAi, setTestingAi] = useState(false);
+  const [savingAi, setSavingAi] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -38,6 +50,7 @@ export default function SettingsPage() {
       setCacheEnabled(d.settings.cache_enabled);
       // 加载 S3 配置
       loadS3Config();
+      loadAiConfig();
     } catch (err: unknown) {
       console.error('Settings load error:', err);
     } finally {
@@ -120,6 +133,56 @@ export default function SettingsPage() {
       setTestResult('❌ 测试失败: ' + (err instanceof Error ? err.message : ''));
     } finally {
       setTesting(false);
+    }
+  }
+
+  // ---- AI 配置 ----
+  async function loadAiConfig() {
+    try {
+      const ai = await getAiConfigApi();
+      setAiProvider(ai.ai_provider || 'openai');
+      setAiOpenaiKey(ai.openai_api_key || '');
+      setAiBaseUrl(ai.openai_base_url || '');
+      setAiModel(ai.openai_model || '');
+      setAiGeminiKey(ai.gemini_api_key || '');
+      setAiGeminiModel(ai.gemini_model || '');
+      setHasAiKey(!!(ai.openai_api_key || ai.gemini_api_key));
+    } catch { /* env vars only, no runtime config yet */ }
+  }
+
+  async function handleSaveAi() {
+    setSavingAi(true);
+    setAiTestResult('');
+    try {
+      const data: Record<string, string> = { ai_provider: aiProvider };
+      if (aiProvider === 'openai') {
+        if (aiOpenaiKey) data.openai_api_key = aiOpenaiKey;
+        if (aiBaseUrl) data.openai_base_url = aiBaseUrl;
+        if (aiModel) data.openai_model = aiModel;
+      } else {
+        if (aiGeminiKey) data.gemini_api_key = aiGeminiKey;
+        if (aiGeminiModel) data.gemini_model = aiGeminiModel;
+      }
+      await updateAiConfigApi(data);
+      await loadAiConfig();
+      setAiTestResult('✅ AI 配置已保存');
+    } catch (err: unknown) {
+      setAiTestResult('❌ ' + (err instanceof Error ? err.message : '保存失败'));
+    } finally {
+      setSavingAi(false);
+    }
+  }
+
+  async function handleTestAi() {
+    setTestingAi(true);
+    setAiTestResult('');
+    try {
+      const result = await testAiConnectionApi();
+      setAiTestResult(result.passed ? '✅ ' + result.reply : '⚠️ ' + result.reply);
+    } catch (err: unknown) {
+      setAiTestResult('❌ ' + (err instanceof Error ? err.message : '测试失败'));
+    } finally {
+      setTestingAi(false);
     }
   }
 
@@ -252,6 +315,75 @@ export default function SettingsPage() {
           开启后，前端会缓存 API 响应 30 秒，减少网络请求，提高操作流畅度。
           缓存不足时会自动刷新，保证数据即时性。
         </p>
+      </div>
+
+      {/* AI 配置 */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, marginBottom: 12 }}>🤖 AI 服务配置</h3>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          配置后可在页面直接修改，覆盖环境变量。API Key 仅前端展示末几位。
+        </p>
+
+        <div className="form-group">
+          <label className="form-label">AI 提供商</label>
+          <select className="form-input" value={aiProvider}
+            onChange={(e: Event) => setAiProvider((e.target as HTMLSelectElement).value)}>
+            <option value="openai">OpenAI 兼容</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </div>
+
+        {aiProvider === 'openai' ? (
+          <>
+            <div className="form-group">
+              <label className="form-label">API Key</label>
+              <input className="form-input" type="password" value={aiOpenaiKey}
+                onInput={(e: Event) => setAiOpenaiKey((e.target as HTMLInputElement).value)}
+                placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Base URL</label>
+              <input className="form-input" value={aiBaseUrl}
+                onInput={(e: Event) => setAiBaseUrl((e.target as HTMLInputElement).value)}
+                placeholder="https://api.openai.com/v1" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">模型</label>
+              <input className="form-input" value={aiModel}
+                onInput={(e: Event) => setAiModel((e.target as HTMLInputElement).value)}
+                placeholder="gpt-4o-mini" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="form-group">
+              <label className="form-label">API Key</label>
+              <input className="form-input" type="password" value={aiGeminiKey}
+                onInput={(e: Event) => setAiGeminiKey((e.target as HTMLInputElement).value)}
+                placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">模型</label>
+              <input className="form-input" value={aiGeminiModel}
+                onInput={(e: Event) => setAiGeminiModel((e.target as HTMLInputElement).value)}
+                placeholder="gemini-2.0-flash" />
+            </div>
+          </>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+          <button className="btn btn-sm" onClick={handleTestAi} disabled={testingAi}>
+            {testingAi ? '⏳ 测试中...' : '🔍 测试 AI 连接'}
+          </button>
+          <button className="btn btn-primary" onClick={handleSaveAi} disabled={savingAi}>
+            {savingAi ? '保存中...' : '💾 保存 AI 配置'}
+          </button>
+          {aiTestResult && (
+            <span style={{ fontSize: 13, color: aiTestResult.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
+              {aiTestResult}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* 保存按钮 */}

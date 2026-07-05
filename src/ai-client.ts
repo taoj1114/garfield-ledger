@@ -30,10 +30,10 @@ class OpenAiClient implements AiClient {
   private baseUrl: string;
   private model: string;
 
-  constructor(env: App['Bindings']) {
-    this.apiKey = env.OPENAI_API_KEY || '';
-    this.baseUrl = (env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-    this.model = env.OPENAI_MODEL || 'gpt-4o-mini';
+  constructor(env: App['Bindings'], runtime?: AiRuntimeConfig) {
+    this.apiKey = runtime?.openai_api_key || env.OPENAI_API_KEY || '';
+    this.baseUrl = (runtime?.openai_base_url || env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    this.model = runtime?.openai_model || env.OPENAI_MODEL || 'gpt-4o-mini';
   }
 
   async chat(messages: AiMessage[], options?: AiChatOptions): Promise<string> {
@@ -77,9 +77,9 @@ class GeminiClient implements AiClient {
   private apiKey: string;
   private model: string;
 
-  constructor(env: App['Bindings']) {
-    this.apiKey = env.GEMINI_API_KEY || '';
-    this.model = env.GEMINI_MODEL || 'gemini-2.0-flash';
+  constructor(env: App['Bindings'], runtime?: AiRuntimeConfig) {
+    this.apiKey = runtime?.gemini_api_key || env.GEMINI_API_KEY || '';
+    this.model = runtime?.gemini_model || env.GEMINI_MODEL || 'gemini-2.0-flash';
   }
 
   async chat(messages: AiMessage[], options?: AiChatOptions): Promise<string> {
@@ -137,17 +137,27 @@ class GeminiClient implements AiClient {
 
 // ============================================================
 // 工厂方法
-// ============================================================
-export function createAiClient(env: App['Bindings']): AiClient {
-  const provider = (env.AI_PROVIDER || 'gemini').toLowerCase();
+/** AI 运行时配置（来自设置页面） */
+export interface AiRuntimeConfig {
+  ai_provider?: string;
+  openai_api_key?: string;
+  openai_base_url?: string;
+  openai_model?: string;
+  gemini_api_key?: string;
+  gemini_model?: string;
+}
+
+/** 工厂方法 — 支持运行时配置覆盖环境变量 */
+export function createAiClient(env: App['Bindings'], runtime?: AiRuntimeConfig): AiClient {
+  const provider = (runtime?.ai_provider || env.AI_PROVIDER || 'gemini').toLowerCase();
 
   switch (provider) {
     case 'openai':
-      if (!env.OPENAI_API_KEY) throw new Error('AI_PROVIDER=openai 但未设置 OPENAI_API_KEY');
-      return new OpenAiClient(env);
+      if (!runtime?.openai_api_key && !env.OPENAI_API_KEY) throw new Error('AI_PROVIDER=openai 但未设置 API Key');
+      return new OpenAiClient(env, runtime);
     case 'gemini':
-      if (!env.GEMINI_API_KEY) throw new Error('AI_PROVIDER=gemini 但未设置 GEMINI_API_KEY');
-      return new GeminiClient(env);
+      if (!runtime?.gemini_api_key && !env.GEMINI_API_KEY) throw new Error('AI_PROVIDER=gemini 但未设置 API Key');
+      return new GeminiClient(env, runtime);
     default:
       throw new Error(`不支持的 AI_PROVIDER: ${provider}（支持: openai, gemini）`);
   }

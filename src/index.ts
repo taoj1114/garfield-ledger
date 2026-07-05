@@ -23,6 +23,7 @@ import { aiChat, analyzeImport, getChatHistory, clearChatHistory } from './ai';
 import {
   getSystemSettings, updateSystemSettings,
   getS3Config, updateS3Config,
+  getAiConfig, updateAiConfig, testAiConnection,
   testS3Connection, getBucketStats,
 } from './settings';
 import { healthCheck } from './s3';
@@ -120,6 +121,9 @@ app.get('/api/settings', getSystemSettings);
 app.put('/api/settings', updateSystemSettings);
 app.get('/api/settings/s3', getS3Config);
 app.put('/api/settings/s3', updateS3Config);
+app.get('/api/settings/ai', getAiConfig);
+app.put('/api/settings/ai', updateAiConfig);
+app.post('/api/settings/ai/test', testAiConnection);
 app.post('/api/settings/test', testS3Connection);
 app.get('/api/settings/stats', getBucketStats);
 
