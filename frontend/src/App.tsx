@@ -6,8 +6,9 @@ import TransactionsPage from './pages/TransactionsPage';
 import AccountsPage from './pages/AccountsPage';
 import AiChatPage from './pages/AiChatPage';
 import AiImportPage from './pages/AiImportPage';
+import SettingsPage from './pages/SettingsPage';
 
-type Page = 'dashboard' | 'txns' | 'accounts' | 'ai' | 'import';
+type Page = 'dashboard' | 'txns' | 'accounts' | 'ai' | 'import' | 'settings';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -40,6 +41,7 @@ export default function App() {
     { key: 'accounts', label: '💳 账户' },
     { key: 'ai', label: '🤖 AI 分析' },
     { key: 'import', label: '🧠 导入' },
+    { key: 'settings', label: '⚙️ 设置' },
   ];
 
   return (
@@ -70,6 +72,7 @@ export default function App() {
         {page === 'accounts' && <AccountsPage />}
         {page === 'ai' && <AiChatPage />}
         {page === 'import' && <AiImportPage />}
+        {page === 'settings' && <SettingsPage />}
       </div>
     </div>
   );

@@ -20,6 +20,10 @@ import {
   getBalances, getBalanceSheet, getIncomeStatement, getAccountTransactions,
 } from './reports';
 import { aiChat, analyzeImport, getChatHistory, clearChatHistory } from './ai';
+import {
+  getSystemSettings, updateSystemSettings,
+  testS3Connection, getBucketStats,
+} from './settings';
 import { healthCheck } from './s3';
 
 const app = new Hono<App>();
@@ -72,6 +76,7 @@ app.post('/api/auth/login', async (c) => {
 app.use('/api/accounts/*', authMiddleware);
 app.use('/api/transactions/*', authMiddleware);
 app.use('/api/reports/*', authMiddleware);
+app.use('/api/settings/*', authMiddleware);
 app.use('/api/ai/*', authMiddleware);
 
 // ============================================================
@@ -106,5 +111,13 @@ app.post('/api/ai/chat', aiChat);
 app.post('/api/ai/analyze-import', analyzeImport);
 app.get('/api/ai/history', getChatHistory);
 app.delete('/api/ai/history', clearChatHistory);
+
+// ============================================================
+// 系统设置
+// ============================================================
+app.get('/api/settings', getSystemSettings);
+app.put('/api/settings', updateSystemSettings);
+app.post('/api/settings/test', testS3Connection);
+app.get('/api/settings/stats', getBucketStats);
 
 export default app;

@@ -174,3 +174,23 @@ export async function analyzeImport(text: string) {
     'POST', '/ai/analyze-import', { text }
   );
 }
+
+// ---- 系统设置 ----
+export async function getSettings() {
+  return request<{
+    s3: { endpoint: string; region: string; bucket: string; connected: boolean };
+    settings: { backup_folder: string; cache_enabled: boolean; updated_at: string };
+  }>('GET', '/settings');
+}
+
+export async function updateSettings(data: { backup_folder?: string; cache_enabled?: boolean }) {
+  return request<{ backup_folder: string; cache_enabled: boolean; updated_at: string }>('PUT', '/settings', data);
+}
+
+export async function testSettings() {
+  return request<{ all_ok: boolean; results: Record<string, unknown> }>('POST', '/settings/test');
+}
+
+export async function getSettingsStats() {
+  return request<{ total_files: number; json_files: number; user_count: number; file_types: Record<string, number>; backup_folder: string }>('GET', '/settings/stats');
+}
