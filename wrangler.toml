@@ -16,6 +16,9 @@ binding = "LEDGER_CONFIG"
 id = "1e80a2fee7594dc8a90c0bdebc28944f"
 preview_id = "1e80a2fee7594dc8a90c0bdebc28944f"
 
+# 自定义域名 (通过 Cloudflare API 配置)
+# route = "money.garfield.pp.ua/*"
+
 # S3 兼容存储配置 (通过环境变量传入)
 [vars]
 S3_REGION = "auto"
