@@ -1,6 +1,6 @@
 // ============================================================
 // garfield-ledger - 主入口
-// Cloudflare Workers + Hono + S3 存储
+// Cloudflare Workers + Hono + S3 存储 + 复式记账
 // ============================================================
 
 import { Hono } from 'hono';
@@ -9,10 +9,6 @@ import { logger } from 'hono/logger';
 import type { App } from './types';
 import { authMiddleware } from './middleware';
 import { registerUser, loginUser } from './auth';
-import {
-  listRecords, createRecord, getRecord, updateRecord, deleteRecord,
-  getStats, getCategories, importRecords,
-} from './records';
 import {
   listAccounts, createAccount, updateAccount, deleteAccount,
 } from './accounts';
@@ -23,8 +19,7 @@ import {
 import {
   getBalances, getBalanceSheet, getIncomeStatement, getAccountTransactions,
 } from './reports';
-import { migrateFromLegacy } from './migrate';
-import { aiChat, analyzeImport, suggestCategories, getChatHistory, clearChatHistory } from './ai';
+import { aiChat, analyzeImport, getChatHistory, clearChatHistory } from './ai';
 import { healthCheck } from './s3';
 
 const app = new Hono<App>();
@@ -72,28 +67,12 @@ app.post('/api/auth/login', async (c) => {
 });
 
 // ============================================================
-// 认证中间件（保护以下所有路由）
+// 认证中间件
 // ============================================================
-app.use('/api/records/*', authMiddleware);
-app.use('/api/stats', authMiddleware);
-app.use('/api/categories', authMiddleware);
 app.use('/api/accounts/*', authMiddleware);
 app.use('/api/transactions/*', authMiddleware);
 app.use('/api/reports/*', authMiddleware);
-app.use('/api/migrate', authMiddleware);
 app.use('/api/ai/*', authMiddleware);
-
-// ============================================================
-// 旧记账记录 API (已废弃，迁移用)
-// ============================================================
-app.get('/api/records', listRecords);
-app.post('/api/records', createRecord);
-app.post('/api/records/import', importRecords);
-app.get('/api/records/:id', getRecord);
-app.put('/api/records/:id', updateRecord);
-app.delete('/api/records/:id', deleteRecord);
-app.get('/api/stats', getStats);
-app.get('/api/categories', getCategories);
 
 // ============================================================
 // 账户管理 API
@@ -121,16 +100,10 @@ app.get('/api/reports/income-statement', getIncomeStatement);
 app.get('/api/reports/account-txns/:accountId', getAccountTransactions);
 
 // ============================================================
-// 数据迁移
-// ============================================================
-app.post('/api/migrate', migrateFromLegacy);
-
-// ============================================================
 // AI 分析
 // ============================================================
 app.post('/api/ai/chat', aiChat);
 app.post('/api/ai/analyze-import', analyzeImport);
-app.post('/api/ai/suggest-categories', suggestCategories);
 app.get('/api/ai/history', getChatHistory);
 app.delete('/api/ai/history', clearChatHistory);
 

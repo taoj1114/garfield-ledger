@@ -3,9 +3,22 @@
 // ============================================================
 
 import type { Context } from 'hono';
-import type { App, Transaction, Account, AccountBalance, BalanceSheet } from './types';
+import type { App, Transaction, Account } from './types';
 import { getJSON } from './s3';
 import { ensureDefaultAccounts } from './accounts';
+
+interface AccountBalance {
+  account: Account;
+  balance: number;
+}
+
+interface BalanceSheet {
+  assets: AccountBalance[];
+  total_assets: number;
+  liabilities: AccountBalance[];
+  total_liabilities: number;
+  equity: number;
+}
 
 /** 计算所有账户余额 */
 async function calculateBalances(env: App['Bindings'], userId: string): Promise<Map<string, number>> {

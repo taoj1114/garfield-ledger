@@ -34,54 +34,6 @@ export interface Transaction {
   updated_at: string;
 }
 
-/** 带账户名的分录（前端用） */
-export interface EntryWithAccount extends Entry {
-  account_name?: string;
-  account_type?: AccountType;
-}
-
-/** 交易 + 展开的分录 */
-export interface TransactionWithEntries extends Transaction {
-  entries: EntryWithAccount[];
-}
-
-/** 账户余额 */
-export interface AccountBalance {
-  account: Account;
-  balance: number;
-}
-
-/** 资产负债表 */
-export interface BalanceSheet {
-  assets: AccountBalance[];
-  total_assets: number;
-  liabilities: AccountBalance[];
-  total_liabilities: number;
-  equity: number;
-}
-
-/** 旧记账记录（兼容迁移用） */
-export interface LegacyRecord {
-  id: string;
-  source: string;
-  amount: number;
-  currency: string;
-  category: string;
-  description: string;
-  timestamp: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/** 统计数据（旧版兼容） */
-export interface StatsData {
-  total_records: number;
-  total_amount: number;
-  currency_breakdown: Record<string, number>;
-  category_breakdown: Record<string, number>;
-  monthly_summary: Record<string, number>;
-}
-
 /** 用户信息 */
 export interface UserData {
   id: string;
@@ -112,18 +64,25 @@ export interface JwtPayload {
   exp: number;
 }
 
-/** 导入分析结果 */
-export interface ImportAnalysisResult {
-  source_type: string;
-  total: number;
-  records: Partial<LegacyRecord>[];
-  description: string;
-}
-
 /** 导入分析请求 */
 export interface AnalyzeImportRequest {
   text: string;
   format?: string;
+}
+
+/** 导入分析结果 */
+export interface ImportAnalysisResult {
+  source_type: string;
+  total: number;
+  records: {
+    source: string;
+    amount: number;
+    currency: string;
+    category: string;
+    description?: string;
+    timestamp: string;
+  }[];
+  description: string;
 }
 
 /** 环境变量绑定 */

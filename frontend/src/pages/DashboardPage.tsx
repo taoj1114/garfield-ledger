@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'preact/compat';
-import { getBalances, getTransactions, migrateFromLegacy, type AccountBalance, type Transaction } from '../api';
+import { getBalances, getTransactions, type AccountBalance, type Transaction } from '../api';
 
 export default function DashboardPage() {
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [recentTxns, setRecentTxns] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [migrateMsg, setMigrateMsg] = useState('');
-  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -14,8 +12,8 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [b, t] = await Promise.all([
-        getBalances().catch(() => [] as AccountBalance[]),
-        getTransactions({ limit: '10' }).catch(() => ({ transactions: [] as Transaction[] })),
+        getBalances().catch(() => []),
+        getTransactions({ limit: '10' }).catch(() => ({ transactions: [] })),
       ]);
       setBalances(b);
       setRecentTxns(t.transactions || []);
@@ -24,70 +22,49 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleMigrate() {
-    if (!confirm('将旧记账数据迁移到复式记账系统？原有数据不变，转换后的数据会作为新交易保存。')) return;
-    setMigrating(true);
-    try {
-      const r = await migrateFromLegacy();
-      setMigrateMsg(`✅ ${r.message}`);
-      await load();
-    } catch (err: unknown) {
-      setMigrateMsg('❌ ' + (err instanceof Error ? err.message : '迁移失败'));
-    } finally {
-      setMigrating(false);
-    }
-  }
-
-  const assetBalances = balances.filter(b => b.account.type === 'asset' && b.account.is_active);
+  const assetBals = balances.filter(b => b.account.type === 'asset' && b.account.is_active);
   const incomeTotal = balances.filter(b => b.account.type === 'income').reduce((s, b) => s + b.balance, 0);
   const expenseTotal = balances.filter(b => b.account.type === 'expense').reduce((s, b) => s + b.balance, 0);
-  const totalAssets = assetBalances.reduce((s, b) => s + b.balance, 0);
+  const totalAssets = assetBals.reduce((s, b) => s + b.balance, 0);
 
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">📊 财务概览</h1>
-        <button className="btn btn-sm" onClick={handleMigrate} disabled={migrating}>
-          {migrating ? '迁移中...' : '🔄 迁移旧数据'}
-        </button>
       </div>
-
-      {migrateMsg && (
-        <div className="card" style={{ marginBottom: 16, fontSize: 14 }}>{migrateMsg}</div>
-      )}
 
       {loading ? (
         <div className="card"><div className="empty-state-icon">📋</div><p>加载中...</p></div>
       ) : (
         <>
-          {/* 资产余额 */}
+          {/* 核心指标 */}
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-value" style={{ fontSize: 24 }}>{totalAssets.toFixed(2)}</div>
               <div className="stat-label">总资产</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value" style={{ fontSize: 24, color: 'var(--success)' }}>{incomeTotal.toFixed(2)}</div>
+              <div className="stat-value" style={{ fontSize: 24, color: 'var(--success)' }}>+{incomeTotal.toFixed(2)}</div>
               <div className="stat-label">总收入</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value" style={{ fontSize: 24, color: 'var(--danger)' }}>{expenseTotal.toFixed(2)}</div>
+              <div className="stat-value" style={{ fontSize: 24, color: 'var(--danger)' }}>-{expenseTotal.toFixed(2)}</div>
               <div className="stat-label">总支出</div>
             </div>
             <div className="stat-card">
               <div className="stat-value" style={{ fontSize: 24, color: incomeTotal - expenseTotal >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                 {(incomeTotal - expenseTotal).toFixed(2)}
               </div>
-              <div className="stat-label">净收入</div>
+              <div className="stat-label">净结余</div>
             </div>
           </div>
 
-          {/* 各资产余额 */}
-          {assetBalances.length > 0 && (
+          {/* 各账户余额 */}
+          {assetBals.length > 0 && (
             <div className="card" style={{ marginBottom: 16 }}>
-              <h3 style={{ fontSize: 15, marginBottom: 12 }}>💳 各账户余额</h3>
+              <h3 style={{ fontSize: 15, marginBottom: 12 }}>💳 账户余额</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                {assetBalances.map(b => (
+                {assetBals.map(b => (
                   <div key={b.account.id} style={{
                     background: '#f1f5f9', borderRadius: 8, padding: '8px 16px', textAlign: 'center', minWidth: 100,
                   }}>

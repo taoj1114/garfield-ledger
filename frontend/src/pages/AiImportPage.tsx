@@ -1,5 +1,5 @@
 import { useState } from 'preact/compat';
-import { analyzeImport, importRecords, type LedgerRecord } from '../api';
+import { analyzeImport, getAccounts, createTransaction } from '../api';
 
 interface AnalysisRecord {
   source: string;
@@ -48,8 +48,43 @@ export default function AiImportPage() {
     setImportResult('');
 
     try {
-      const data = await importRecords(result.records as Partial<LedgerRecord>[]);
-      setImportResult(`✅ 成功导入 ${data.imported} 条记录！`);
+      const accounts = await getAccounts();
+      const cashAccount = accounts.find(a => a.name === '现金') || accounts.find(a => a.type === 'asset');
+      if (!cashAccount) throw new Error('未找到资产账户，请先在「账户」页面创建');
+
+      // 收入/费用分类名 → 账户名映射
+      const incomeMap: Record<string, string> = {
+        '工资': '工资收入', '投资': '投资收益',
+      };
+      const expenseMap: Record<string, string> = {
+        '餐饮': '餐饮费用', '交通': '交通费用', '购物': '购物支出',
+        '居住': '居住支出', '医疗': '医疗支出', '娱乐': '娱乐支出',
+        '教育': '教育支出',
+      };
+
+      let imported = 0;
+      for (const r of result.records) {
+        const isIncome = incomeMap[r.category] !== undefined;
+        const targetName = isIncome ? (incomeMap[r.category] || '其他收入') : (expenseMap[r.category] || '其他支出');
+        const targetAccount = accounts.find(a => a.name === targetName);
+        if (!targetAccount) continue;
+
+        const absAmt = Math.abs(r.amount);
+        await createTransaction({
+          description: r.source,
+          timestamp: r.timestamp || new Date().toISOString(),
+          entries: isIncome ? [
+            { account_id: cashAccount.id, debit: absAmt, credit: 0 },
+            { account_id: targetAccount.id, debit: 0, credit: absAmt },
+          ] : [
+            { account_id: targetAccount.id, debit: absAmt, credit: 0 },
+            { account_id: cashAccount.id, debit: 0, credit: absAmt },
+          ],
+        });
+        imported++;
+      }
+
+      setImportResult(`✅ 成功导入 ${imported} 笔交易`);
       setResult(null);
       setRawText('');
     } catch (err: unknown) {
