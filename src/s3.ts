@@ -58,7 +58,7 @@ async function resolveConfig(env: App['Bindings']): Promise<S3ConnectionConfig> 
   return bootstrap;
 }
 
-/** 保存运行时 S3 配置到 _config/s3.json */
+/** 保存运行时 S3 配置到 _config/s3.json（同时写入新旧两个桶） */
 export async function saveRuntimeConfig(env: App['Bindings'], config: S3ConnectionConfig): Promise<boolean> {
   const bootstrap: S3ConnectionConfig = {
     endpoint: env.S3_ENDPOINT,
@@ -68,31 +68,60 @@ export async function saveRuntimeConfig(env: App['Bindings'], config: S3Connecti
     bucket: env.S3_BUCKET,
   };
 
+  const configBody = JSON.stringify(config);
+  let wroteToOld = false;
+  let wroteToNew = false;
+
+  // 写入旧桶（用 bootstrap 凭证）
   try {
-    const client = new AwsClient({
+    const oldClient = new AwsClient({
       accessKeyId: bootstrap.accessKeyId,
       secretAccessKey: bootstrap.secretAccessKey,
       service: 's3',
       region: bootstrap.region,
     });
-
-    const url = `${bootstrap.endpoint}/${bootstrap.bucket}/_config/s3.json`;
-    const res = await client.fetch(url, {
+    const oldUrl = `${bootstrap.endpoint}/${bootstrap.bucket}/_config/s3.json`;
+    const oldRes = await oldClient.fetch(oldUrl, {
       method: 'PUT',
-      body: JSON.stringify(config),
+      body: configBody,
       headers: { 'Content-Type': 'application/json' },
     });
-
-    if (res.ok) {
-      // 清除缓存，下次请求使用新配置
-      cachedConfig = null;
-      return true;
+    wroteToOld = oldRes.ok;
+    if (wroteToOld) {
+      console.log('Config written to old bucket (bootstrap)');
     }
-    return false;
   } catch (err) {
-    console.error('Save S3 config error:', err);
-    return false;
+    console.error('Write to old bucket failed:', err);
   }
+
+  // 写入新桶（用新凭证）— 确保迁移到新提供商后也能 bootstrap
+  try {
+    const newClient = new AwsClient({
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+      service: 's3',
+      region: config.region,
+    });
+    const newUrl = `${config.endpoint}/${config.bucket}/_config/s3.json`;
+    const newRes = await newClient.fetch(newUrl, {
+      method: 'PUT',
+      body: configBody,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    wroteToNew = newRes.ok;
+    if (wroteToNew) {
+      console.log('Config written to new bucket (runtime)');
+    }
+  } catch (err) {
+    console.error('Write to new bucket failed:', err);
+  }
+
+  // 至少一个写入成功就算成功
+  if (wroteToOld || wroteToNew) {
+    cachedConfig = null;
+    return true;
+  }
+  return false;
 }
 
 /** 获取一个配置好的 S3 客户端 */
