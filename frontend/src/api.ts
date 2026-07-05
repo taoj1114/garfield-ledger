@@ -195,6 +195,15 @@ export async function getSettingsStats() {
   return request<{ total_files: number; json_files: number; user_count: number; file_types: Record<string, number>; backup_folder: string }>('GET', '/settings/stats');
 }
 
+// ---- 汇率 ----
+export async function getExchangeRates() {
+  return request<Record<string, number>>('GET', '/exchange-rates');
+}
+
+export async function refreshExchangeRates() {
+  return request<Record<string, number>>('POST', '/exchange-rates/refresh');
+}
+
 // ---- AI 配置 ----
 export async function getAiConfigApi() {
   return request<{

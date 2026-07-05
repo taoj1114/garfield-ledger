@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/compat';
 import {
-  getAccounts, getTransactions, createTransaction, deleteTransaction,
+  getAccounts, getTransactions, createTransaction, updateTransaction, deleteTransaction,
   getBalances,
   type Account, type Transaction, type Entry, type AccountBalance,
 } from '../api';
@@ -12,6 +12,7 @@ export default function TransactionsPage() {
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // 表单状态
   const [desc, setDesc] = useState('');
@@ -49,12 +50,27 @@ export default function TransactionsPage() {
   const expenseAccounts = accounts.filter(a => a.type === 'expense' && a.is_active);
 
   function openAddForm() {
+    setEditId(null);
     setDesc('');
     setTs(new Date().toISOString().slice(0, 10));
     setEntries([
       { account_id: '', side: 'debit', amount: 0, desc: '' },
       { account_id: '', side: 'credit', amount: 0, desc: '' },
     ]);
+    setError('');
+    setShowForm(true);
+  }
+
+  function openEdit(txn: Transaction) {
+    setEditId(txn.id);
+    setDesc(txn.description);
+    setTs(txn.timestamp.slice(0, 10));
+    setEntries(txn.entries.map(e => ({
+      account_id: e.account_id,
+      side: e.debit > 0 ? 'debit' as const : 'credit' as const,
+      amount: e.debit > 0 ? e.debit : e.credit,
+      desc: e.description || '',
+    })));
     setError('');
     setShowForm(true);
   }
@@ -94,7 +110,7 @@ export default function TransactionsPage() {
     if (diff > 0.001) { setError(`借贷不平衡: 借方 ${totalDebit()} ≠ 贷方 ${totalCredit()}`); return; }
 
     try {
-      await createTransaction({
+      const txnData = {
         description: desc.trim(),
         timestamp: ts || new Date().toISOString(),
         entries: entries.map(e => ({
@@ -103,7 +119,12 @@ export default function TransactionsPage() {
           credit: e.side === 'credit' ? e.amount : 0,
           description: e.desc || undefined,
         })),
-      });
+      };
+      if (editId) {
+        await updateTransaction(editId, txnData);
+      } else {
+        await createTransaction(txnData);
+      }
       setShowForm(false);
       await load();
     } catch (err: unknown) {
@@ -170,6 +191,7 @@ export default function TransactionsPage() {
                       {renderBalanceDiff(t.entries)}
                     </td>
                     <td data-label="操作">
+                      <button className="btn btn-sm" onClick={() => openEdit(t)}>编辑</button>
                       <button className="btn btn-sm btn-danger" onClick={() => handleDelete(t.id)}>删除</button>
                     </td>
                   </tr>
@@ -203,7 +225,7 @@ export default function TransactionsPage() {
       {showForm && (
         <div className="modal-overlay active" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 640 }}>
-            <h2 className="modal-title">新建交易</h2>
+            <h2 className="modal-title">{editId ? '编辑交易' : '新建交易'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group" style={{ flex: 2 }}>

@@ -132,8 +132,17 @@ export default function AccountsPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">货币</label>
-                <input className="form-input" value={form.currency}
-                  onInput={(e: Event) => setForm({ ...form, currency: (e.target as HTMLInputElement).value })} />
+                <select className="form-input" value={form.currency}
+                  onChange={(e: Event) => setForm({ ...form, currency: (e.target as HTMLSelectElement).value })}>
+                  <option value="CNY">CNY - 人民币</option>
+                  <option value="USD">USD - 美元</option>
+                  <option value="USDT">USDT - 泰达币</option>
+                  <option value="ETH">ETH - 以太坊</option>
+                  <option value="BTC">BTC - 比特币</option>
+                  <option value="HKD">HKD - 港币</option>
+                  <option value="JPY">JPY - 日元</option>
+                  <option value="EUR">EUR - 欧元</option>
+                </select>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn" onClick={() => setShowForm(false)}>取消</button>

@@ -20,6 +20,7 @@ import {
   getBalances, getBalanceSheet, getIncomeStatement, getAccountTransactions,
 } from './reports';
 import { aiChat, analyzeImport, getChatHistory, clearChatHistory } from './ai';
+import { getRates, refreshRates } from './exchange';
 import {
   getSystemSettings, updateSystemSettings,
   getS3Config, updateS3Config,
@@ -79,6 +80,7 @@ app.use('/api/accounts/*', authMiddleware);
 app.use('/api/transactions/*', authMiddleware);
 app.use('/api/reports/*', authMiddleware);
 app.use('/api/settings/*', authMiddleware);
+app.use('/api/exchange-rates/*', authMiddleware);
 app.use('/api/ai/*', authMiddleware);
 
 // ============================================================
@@ -126,5 +128,17 @@ app.put('/api/settings/ai', updateAiConfig);
 app.post('/api/settings/ai/test', testAiConnection);
 app.post('/api/settings/test', testS3Connection);
 app.get('/api/settings/stats', getBucketStats);
+
+// ============================================================
+// 汇率
+// ============================================================
+app.get('/api/exchange-rates', async (c) => {
+  const rates = await getRates(c.env);
+  return c.json({ success: true, data: rates });
+});
+app.post('/api/exchange-rates/refresh', async (c) => {
+  const rates = await refreshRates(c.env);
+  return c.json({ success: true, data: rates });
+});
 
 export default app;
