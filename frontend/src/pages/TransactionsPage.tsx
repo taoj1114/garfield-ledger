@@ -50,7 +50,7 @@ export default function TransactionsPage() {
 
   function openAddForm() {
     setDesc('');
-    setTs(new Date().toISOString().slice(0, 16));
+    setTs(new Date().toISOString().slice(0, 10));
     setEntries([
       { account_id: '', side: 'debit', amount: 0, desc: '' },
       { account_id: '', side: 'credit', amount: 0, desc: '' },
@@ -214,7 +214,7 @@ export default function TransactionsPage() {
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">时间</label>
-                  <input type="datetime-local" className="form-input" value={ts}
+                  <input type="date" className="form-input" value={ts.slice(0,10)}
                     onInput={(e: Event) => setTs((e.target as HTMLInputElement).value)} />
                 </div>
               </div>
