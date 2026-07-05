@@ -194,3 +194,32 @@ export async function testSettings() {
 export async function getSettingsStats() {
   return request<{ total_files: number; json_files: number; user_count: number; file_types: Record<string, number>; backup_folder: string }>('GET', '/settings/stats');
 }
+
+// ---- S3 运行时配置 ----
+export async function getS3ConfigApi() {
+  return request<{
+    endpoint: string;
+    access_key_id: string;
+    secret_access_key: string;
+    region: string;
+    bucket: string;
+    source: string;
+  }>('GET', '/settings/s3');
+}
+
+export async function updateS3ConfigApi(data: {
+  endpoint: string;
+  access_key_id: string;
+  secret_access_key: string;
+  region?: string;
+  bucket: string;
+}) {
+  return request<{
+    endpoint: string;
+    access_key_id: string;
+    secret_access_key: string;
+    region: string;
+    bucket: string;
+    source: string;
+  }>('PUT', '/settings/s3', data);
+}

@@ -22,6 +22,7 @@ import {
 import { aiChat, analyzeImport, getChatHistory, clearChatHistory } from './ai';
 import {
   getSystemSettings, updateSystemSettings,
+  getS3Config, updateS3Config,
   testS3Connection, getBucketStats,
 } from './settings';
 import { healthCheck } from './s3';
@@ -117,6 +118,8 @@ app.delete('/api/ai/history', clearChatHistory);
 // ============================================================
 app.get('/api/settings', getSystemSettings);
 app.put('/api/settings', updateSystemSettings);
+app.get('/api/settings/s3', getS3Config);
+app.put('/api/settings/s3', updateS3Config);
 app.post('/api/settings/test', testS3Connection);
 app.get('/api/settings/stats', getBucketStats);
 

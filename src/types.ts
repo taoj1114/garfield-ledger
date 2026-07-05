@@ -85,6 +85,15 @@ export interface ImportAnalysisResult {
   description: string;
 }
 
+/** S3 运行时连接配置 */
+export interface S3ConnectionConfig {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  bucket: string;
+}
+
 /** 环境变量绑定 */
 export interface EnvBindings {
   S3_ENDPOINT: string;
