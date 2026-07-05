@@ -95,10 +95,10 @@ export default function AccountsPage() {
                 <tbody>
                   {g.items.map(a => (
                     <tr key={a.id}>
-                      <td>{esc(a.name)}</td>
-                      <td>{a.currency}</td>
-                      <td>{a.is_active ? '✅ 启用' : '⛔ 停用'}</td>
-                      <td>
+                      <td data-label="名称">{esc(a.name)}</td>
+                      <td data-label="货币">{a.currency}</td>
+                      <td data-label="状态">{a.is_active ? '✅ 启用' : '⛔ 停用'}</td>
+                      <td data-label="操作">
                         <button className="btn btn-sm" onClick={() => openEdit(a)}>编辑</button>
                         <button className="btn btn-sm btn-danger" onClick={() => handleDelete(a.id)}>删除</button>
                       </td>

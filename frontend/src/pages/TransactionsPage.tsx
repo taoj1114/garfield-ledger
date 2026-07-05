@@ -157,19 +157,19 @@ export default function TransactionsPage() {
               <tbody>
                 {txns.map(t => (
                   <tr key={t.id}>
-                    <td style={{ fontSize: 12 }}>{new Date(t.timestamp).toLocaleDateString('zh-CN')}</td>
-                    <td><strong>{esc(t.description)}</strong></td>
-                    <td style={{ fontSize: 12 }}>
+                    <td data-label="时间" style={{ fontSize: 12 }}>{new Date(t.timestamp).toLocaleDateString('zh-CN')}</td>
+                    <td data-label="描述"><strong>{esc(t.description)}</strong></td>
+                    <td data-label="分录" style={{ fontSize: 12 }}>
                       {t.entries.map((e, i) => (
                         <div key={i} style={{ color: e.debit > 0 ? 'var(--primary)' : 'var(--danger)' }}>
                           {esc(e.account_name || '?')} {e.debit > 0 ? `借 ${e.debit}` : `贷 ${e.credit}`}
                         </div>
                       ))}
                     </td>
-                    <td style={{ fontSize: 12 }}>
+                    <td data-label="金额" style={{ fontSize: 12 }}>
                       {renderBalanceDiff(t.entries)}
                     </td>
-                    <td>
+                    <td data-label="操作">
                       <button className="btn btn-sm btn-danger" onClick={() => handleDelete(t.id)}>删除</button>
                     </td>
                   </tr>

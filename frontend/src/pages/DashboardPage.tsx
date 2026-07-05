@@ -94,9 +94,9 @@ export default function DashboardPage() {
                   <tbody>
                     {recentTxns.map(t => (
                       <tr key={t.id}>
-                        <td>{new Date(t.timestamp).toLocaleDateString('zh-CN')}</td>
-                        <td><strong>{esc(t.description)}</strong></td>
-                        <td style={{ fontSize: 12, lineHeight: 1.8 }}>
+                        <td data-label="时间">{new Date(t.timestamp).toLocaleDateString('zh-CN')}</td>
+                        <td data-label="描述"><strong>{esc(t.description)}</strong></td>
+                        <td data-label="分录" style={{ fontSize: 12, lineHeight: 1.8 }}>
                           {t.entries.map((e, i) => (
                             <span key={i} style={{
                               display: 'inline-block', marginRight: 8,
