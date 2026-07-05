@@ -54,13 +54,33 @@ export interface JwtPayload {
   exp: number;
 }
 
-/** Gemini API 响应 */
-export interface GeminiResponse {
-  candidates?: {
-    content?: {
-      parts?: { text?: string }[];
-    };
-  }[];
+/** 导入分析 - 识别结果 */
+export interface ImportAnalysisResult {
+  /** 数据来源描述 (如: 微信账单 / 支付宝账单 / 银行流水 / 手动记账) */
+  source_type: string;
+  /** 总条数 */
+  total: number;
+  /** 解析后的记录列表 */
+  records: Partial<LedgerRecord>[];
+  /** 分析说明 */
+  description: string;
+}
+
+/** 导入分析请求 */
+export interface AnalyzeImportRequest {
+  /** 待分析的原始文本 */
+  text: string;
+  /** 可选指定格式 (csv / json / text) */
+  format?: string;
+}
+
+/** 分类建议结果 */
+export interface CategorySuggestion {
+  record_id: string;
+  source: string;
+  suggested_category: string;
+  confidence: number;
+  reason: string;
 }
 
 /** 环境变量绑定 */
@@ -71,11 +91,19 @@ export interface EnvBindings {
   S3_REGION: string;
   S3_BUCKET: string;
   JWT_SECRET: string;
-  GEMINI_API_KEY: string;
+  // AI 通用配置
+  AI_PROVIDER?: string;
+  // OpenAI 兼容参数
+  OPENAI_API_KEY?: string;
+  OPENAI_BASE_URL?: string;
+  OPENAI_MODEL?: string;
+  // Gemini 参数
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
   ASSETS: Fetcher;
 }
 
-/** Hono App 类型 - 包含 Env 和 Variables */
+/** Hono App 类型 */
 export type App = {
   Bindings: EnvBindings;
   Variables: {

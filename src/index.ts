@@ -13,7 +13,7 @@ import {
   listRecords, createRecord, getRecord, updateRecord, deleteRecord,
   getStats, getCategories, importRecords,
 } from './records';
-import { aiChat, getChatHistory, clearChatHistory } from './ai';
+import { aiChat, analyzeImport, suggestCategories, getChatHistory, clearChatHistory } from './ai';
 import { healthCheck } from './s3';
 
 const app = new Hono<App>();
@@ -96,6 +96,8 @@ app.get('/api/stats', getStats);
 app.get('/api/categories', getCategories);
 
 app.post('/api/ai/chat', aiChat);
+app.post('/api/ai/analyze-import', analyzeImport);
+app.post('/api/ai/suggest-categories', suggestCategories);
 app.get('/api/ai/history', getChatHistory);
 app.delete('/api/ai/history', clearChatHistory);
 

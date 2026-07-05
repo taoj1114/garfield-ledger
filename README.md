@@ -8,7 +8,8 @@
 - **多币种支持** — 人民币、美元、加密货币等任意货币单位
 - **数据概览** — 统计总记录数、总金额、分类 TOP 5
 - **CSV 导入/导出** — 批量导入导出数据，方便迁移
-- **AI 分析助手** — 接入 Gemini API，基于你的记账数据回答财务问题（消费趋势、分类占比、月度对比等）
+- **AI 智能导入** — 粘贴任意格式数据（银行流水、微信/支付宝账单、自然语言描述），AI 自动识别解析
+- **AI 分析助手** — 接入 OpenAI 兼容 API 或 Gemini，基于你的记账数据回答财务问题
 - **账户密码登录** — 独立账户系统，JWT 认证
 - **S3 持久化** — 所有数据存储在 S3 兼容对象存储（如 Garage、AWS S3、MinIO 等）
 
@@ -77,7 +78,10 @@ cp .env.example .dev.vars
 # S3_ACCESS_KEY_ID - 访问密钥
 # S3_SECRET_ACCESS_KEY - 密钥
 # JWT_SECRET - JWT 签名密钥（随机长字符串）
-# GEMINI_API_KEY - Gemini API Key
+#
+# AI 配置（二选一）：
+#   OpenAI 兼容 (推荐): AI_PROVIDER=openai + OPENAI_API_KEY + OPENAI_BASE_URL + OPENAI_MODEL
+#   Gemini:             AI_PROVIDER=gemini + GEMINI_API_KEY
 ```
 
 生产环境需要在 Cloudflare Dashboard → Workers & Pages → **garfield-ledger** → Settings → Variables 中设置上述环境变量。
@@ -138,7 +142,12 @@ garfield-ledger/
 | `S3_REGION` | S3 区域 | `auto` 或 `us-east-1` |
 | `S3_BUCKET` | S3 存储桶名 | `garfield-ledger` |
 | `JWT_SECRET` | JWT 签名密钥 | 随机字符串（至少 32 位） |
+| `AI_PROVIDER` | AI 提供商 | `openai` 或 `gemini`（默认 gemini） |
+| `OPENAI_API_KEY` | OpenAI 兼容 API 密钥 | `sk-...` |
+| `OPENAI_BASE_URL` | OpenAI 兼容 API 地址 | `https://api.openai.com/v1` |
+| `OPENAI_MODEL` | OpenAI 模型名 | `gpt-4o-mini` |
 | `GEMINI_API_KEY` | Gemini API 密钥 | `AIza...` |
+| `GEMINI_MODEL` | Gemini 模型名 | `gemini-2.0-flash` |
 
 ## 📊 API 接口
 
@@ -155,7 +164,9 @@ garfield-ledger/
 | POST | `/api/records/import` | 是 | 批量导入 |
 | GET | `/api/stats` | 是 | 获取统计数据 |
 | GET | `/api/categories` | 是 | 获取分类列表 |
-| POST | `/api/ai/chat` | 是 | AI 对话 |
+| POST | `/api/ai/chat` | 是 | AI 对话分析 |
+| POST | `/api/ai/analyze-import` | 是 | AI 智能导入分析（识别任意格式数据） |
+| POST | `/api/ai/suggest-categories` | 是 | AI 分类建议 |
 | GET | `/api/ai/history` | 是 | 获取 AI 聊天历史 |
 | DELETE | `/api/ai/history` | 是 | 清空聊天历史 |
 

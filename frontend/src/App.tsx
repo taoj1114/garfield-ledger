@@ -3,8 +3,9 @@ import { isLoggedIn, getUsername } from './api';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AiChatPage from './pages/AiChatPage';
+import AiImportPage from './pages/AiImportPage';
 
-type Page = 'dashboard' | 'ai';
+type Page = 'dashboard' | 'ai' | 'import';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -34,6 +35,7 @@ export default function App() {
   const tabs: { key: Page; label: string }[] = [
     { key: 'dashboard', label: '📊 概览' },
     { key: 'ai', label: '🤖 AI 分析' },
+    { key: 'import', label: '🧠 智能导入' },
   ];
 
   return (
@@ -63,6 +65,7 @@ export default function App() {
       <div className="container">
         {page === 'dashboard' && <DashboardPage />}
         {page === 'ai' && <AiChatPage />}
+        {page === 'import' && <AiImportPage />}
       </div>
     </div>
   );

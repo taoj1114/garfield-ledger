@@ -141,6 +141,16 @@ export async function clearChatHistory() {
   return request<void>('DELETE', '/ai/history');
 }
 
+export async function analyzeImport(text: string) {
+  return request<{ source_type: string; total: number; records: Partial<LedgerRecord>[]; description: string }>(
+    'POST', '/ai/analyze-import', { text }
+  );
+}
+
+export async function suggestCategories(records: Partial<LedgerRecord>[]) {
+  return request('POST', '/ai/suggest-categories', { records });
+}
+
 // ---- CSV 导入导出 ----
 export function exportCsv(records: LedgerRecord[]) {
   const headers = '时间,来源,金额,货币,分类,备注';
