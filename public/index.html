@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📒 记账本 - garfield-ledger</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- ===== 登录页面 ===== -->
+<div id="login-page" class="login-page">
+  <div class="login-card">
+    <h1 class="login-title">📒 记账本</h1>
+    <p class="login-subtitle" id="login-subtitle">登录到你的记账账号</p>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">用户名</label>
+        <input type="text" class="form-input" id="login-username"
+          placeholder="请输入用户名" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <input type="password" class="form-input" id="login-password"
+          placeholder="请输入密码" autocomplete="current-password" required>
+      </div>
+      <p id="login-error" style="color:var(--danger);font-size:14px;margin-bottom:12px"></p>
+      <button type="submit" class="btn btn-primary" id="login-submit"
+        style="width:100%;padding:12px">登录</button>
+    </form>
+
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-sm" id="auth-toggle" style="border:none;color:var(--primary);background:none;cursor:pointer">
+        没有账号？去注册
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 应用外壳 ===== -->
+<div id="app-shell" style="display:none">
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="#" class="navbar-brand">📒 记账本</a>
+      <a href="#" class="nav-link active" data-page="dashboard">📊 概览</a>
+      <a href="#" class="nav-link" data-page="ai">🤖 AI 分析</a>
+      <div class="navbar-right">
+        <span style="font-size:13px;color:var(--text-secondary)" id="username-display"></span>
+        <button class="btn btn-sm" id="logout-btn">退出</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 页面容器 -->
+  <div class="container">
+
+    <!-- 概览页 -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1 class="page-title">📊 财务概览</h1>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" id="import-btn">📥 导入</button>
+          <input type="file" id="import-file" accept=".csv" style="display:none">
+          <button class="btn btn-sm" id="export-btn">📤 导出</button>
+          <button class="btn btn-primary" id="add-record-btn">+ 添加记录</button>
+        </div>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-records">0</div>
+          <div class="stat-label">总记录数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-amount">0</div>
+          <div class="stat-label">总金额</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="font-size:16px;font-weight:600" id="stat-categories">
+            <div style="text-align:left;padding:4px 0">暂无数据</div>
+          </div>
+          <div class="stat-label">分类 TOP 5</div>
+        </div>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <select class="form-input" style="width:auto" id="filter-category" onchange="records.applyFilter()">
+          <option value="">全部分类</option>
+        </select>
+      </div>
+
+      <!-- 记录列表 -->
+      <div class="card" id="records-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">加载中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 分析页 -->
+    <div id="page-ai" class="page">
+      <div class="page-header">
+        <h1 class="page-title">🤖 AI 分析助手</h1>
+      </div>
+      <div id="ai-container">
+        <!-- AI 聊天界面由 js/ai.js 渲染 -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 记录编辑模态框 ===== -->
+<div class="modal-overlay" id="record-modal">
+  <div class="modal">
+    <h2 class="modal-title" id="modal-title">添加记录</h2>
+    <input type="hidden" id="record-id">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">来源 *</label>
+        <input type="text" class="form-input" id="record-source"
+          placeholder="例: 工资、买菜、房租" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">金额 *</label>
+        <input type="number" class="form-input" id="record-amount"
+          placeholder="0.00" step="0.01" required>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">货币</label>
+        <select class="form-input" id="record-currency">
+          <option value="CNY">CNY - 人民币</option>
+          <option value="USD">USD - 美元</option>
+          <option value="ETH">ETH - 以太坊</option>
+          <option value="BTC">BTC - 比特币</option>
+          <option value="USDT">USDT - 泰达币</option>
+          <option value="HKD">HKD - 港币</option>
+          <option value="JPY">JPY - 日元</option>
+          <option value="EUR">EUR - 欧元</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <select class="form-input" id="record-category">
+          <option value="餐饮">🍜 餐饮</option>
+          <option value="交通">🚗 交通</option>
+          <option value="购物">🛒 购物</option>
+          <option value="居住">🏠 居住</option>
+          <option value="工资">💰 工资</option>
+          <option value="投资">📈 投资</option>
+          <option value="医疗">🏥 医疗</option>
+          <option value="娱乐">🎮 娱乐</option>
+          <option value="教育">📚 教育</option>
+          <option value="其他">📦 其他</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">备注</label>
+      <input type="text" class="form-input" id="record-description" placeholder="可选备注">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">时间</label>
+      <input type="datetime-local" class="form-input" id="record-timestamp">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="modal-cancel">取消</button>
+      <button class="btn btn-primary" id="modal-submit">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 脚本 ===== -->
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/records.js"></script>
+<script src="/js/ai.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>

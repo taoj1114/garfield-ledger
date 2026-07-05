@@ -1,0 +1,22 @@
+{
+  "name": "garfield-ledger",
+  "version": "0.1.0",
+  "description": "📒 个人记账工具 - 数据存储在 S3，前端部署在 Cloudflare Workers，支持 AI 分析",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "aws4fetch": "^1.0.20",
+    "hono": "^4.7.0",
+    "jose": "^5.9.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241201.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.100.0"
+  }
+}
