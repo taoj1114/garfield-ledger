@@ -41,11 +41,18 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   const options: RequestInit = { method, headers };
   if (body !== undefined) options.body = JSON.stringify(body);
 
-  const res = await fetch(`${API_BASE}${path}`, options);
-  const data = await res.json() as { success: boolean; data?: T; error?: string };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  options.signal = controller.signal;
 
-  if (!data.success) throw new Error(data.error || '请求失败');
-  return data.data as T;
+  try {
+    const res = await fetch(`${API_BASE}${path}`, options);
+    const data = await res.json() as { success: boolean; data?: T; error?: string };
+    if (!data.success) throw new Error(data.error || '请求失败');
+    return data.data as T;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ---- 认证 ----

@@ -37,7 +37,10 @@ export default function AiImportPage() {
       const data = await analyzeImport(rawText);
       setResult(data as unknown as AnalysisResult);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '分析失败');
+      const msg = err instanceof Error ? err.message : '分析失败';
+      setError(msg.includes('Failed to fetch') || msg.includes('aborted')
+        ? '⚠️ 请求超时或网络中断。AI 分析可能需要较长时间，请稍后重试或刷新页面。'
+        : '❌ ' + msg);
     } finally {
       setAnalyzing(false);
     }

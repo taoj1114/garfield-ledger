@@ -1,0 +1,137 @@
+[
+  {
+    "name": "现金",
+    "type": "asset",
+    "currency": "CNY",
+    "sort_order": 1,
+    "is_active": true,
+    "id": "016caecd-1f6c-4fbd-a61c-85d364b1df6a",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "银行卡",
+    "type": "asset",
+    "currency": "CNY",
+    "sort_order": 2,
+    "is_active": true,
+    "id": "9fb85250-6ec2-43ae-8f3f-fed8c1a410ec",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "微信钱包",
+    "type": "asset",
+    "currency": "CNY",
+    "sort_order": 3,
+    "is_active": true,
+    "id": "732534a1-8a55-4757-81af-b7bd75cdbf23",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "支付宝",
+    "type": "asset",
+    "currency": "CNY",
+    "sort_order": 4,
+    "is_active": true,
+    "id": "766cbe79-26de-483e-bdec-e6057760f4f2",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "工资收入",
+    "type": "income",
+    "currency": "CNY",
+    "sort_order": 10,
+    "is_active": true,
+    "id": "401e454d-1059-461b-b991-6aa8ff4a5767",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "投资收益",
+    "type": "income",
+    "currency": "CNY",
+    "sort_order": 11,
+    "is_active": true,
+    "id": "6a2bd347-5b93-49ec-ac53-c454cac98139",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "其他收入",
+    "type": "income",
+    "currency": "CNY",
+    "sort_order": 12,
+    "is_active": true,
+    "id": "9fc46e00-7b23-491b-8a22-cc44bc557bc8",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "餐饮费用",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 20,
+    "is_active": true,
+    "id": "8725966c-adfd-42c7-b4b6-7a3be2266097",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "交通费用",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 21,
+    "is_active": true,
+    "id": "e3805b22-5e30-478f-beb2-5456e0c66f3d",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "购物支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 22,
+    "is_active": true,
+    "id": "d01deb7e-c10a-4264-b3d7-46894df63d29",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "居住支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 23,
+    "is_active": true,
+    "id": "13bf4aa0-c4a5-4d17-8184-dce14e50aa73",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "医疗支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 24,
+    "is_active": true,
+    "id": "e7ebe807-7e27-4c9b-9084-9fe46883ca46",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "娱乐支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 25,
+    "is_active": true,
+    "id": "3d3962f3-ac7a-4ca6-9820-dc7c2f0b5fdb",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "教育支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 26,
+    "is_active": true,
+    "id": "09859ec2-8741-4f8b-a8f9-d70018f535e2",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  },
+  {
+    "name": "其他支出",
+    "type": "expense",
+    "currency": "CNY",
+    "sort_order": 27,
+    "is_active": true,
+    "id": "295b1587-ae83-474d-888d-abaec1b5b09c",
+    "created_at": "2026-07-06T04:28:36.315Z"
+  }
+]

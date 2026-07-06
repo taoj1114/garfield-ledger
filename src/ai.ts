@@ -186,14 +186,13 @@ export async function analyzeImport(c: Context<App>) {
     const reply = await client.chat([
       { role: 'system', content: IMPORT_ANALYSIS_PROMPT },
       { role: 'user', content: `请分析以下数据:\n\n\`\`\`\n${body.text}\n\`\`\`${formatHint}` },
-    ], { responseFormat: 'json', temperature: 0.3 });
+    ], { responseFormat: 'json', temperature: 0.3, maxTokens: 4096 });
 
+    if (!reply.trim()) throw new Error('AI 返回内容为空，请重试');
     const result: ImportAnalysisResult = JSON.parse(reply);
     if (!result.records?.length) throw new Error('AI 未识别出有效记录');
-
     return c.json({ success: true, data: result });
   } catch (err) {
-    console.error('AI analyze error:', err);
     return c.json({ success: false, error: err instanceof Error ? err.message : '分析失败' }, 500);
   }
 }
