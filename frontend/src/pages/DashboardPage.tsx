@@ -33,12 +33,11 @@ export default function DashboardPage() {
   }
 
   const assetBals = balances.filter(b => b.account.type === 'asset' && b.account.is_active);
-  const incomeTotal = balances.filter(b => b.account.type === 'income').reduce((s, b) => s + toCny(b.balance, b.account.currency), 0);
-  const expenseTotal = balances.filter(b => b.account.type === 'expense').reduce((s, b) => s + toCny(b.balance, b.account.currency), 0);
+  const incomeTotal = balances.filter(b => b.account.type === 'income').reduce((s, b) => s + toCny(b.balance, b.currency), 0);
+  const expenseTotal = balances.filter(b => b.account.type === 'expense').reduce((s, b) => s + toCny(b.balance, b.currency), 0);
 
-  // 总资产（CNY 换算）
   let totalAssetsCny = 0;
-  for (const b of assetBals) totalAssetsCny += toCny(b.balance, b.account.currency);
+  for (const b of assetBals) totalAssetsCny += toCny(b.balance, b.currency);
 
   return (
     <div>
@@ -80,7 +79,7 @@ export default function DashboardPage() {
                   <div key={b.account.id} style={{
                     background: '#f1f5f9', borderRadius: 8, padding: '8px 16px', textAlign: 'center', minWidth: 120,
                   }}>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{b.account.name} ({b.account.currency})</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{b.account.name} ({b.currency})</div>
                     <div style={{ fontSize: 20, fontWeight: 700, color: b.balance >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
                       {b.balance.toFixed(2)}
                     </div>
@@ -135,7 +134,7 @@ export default function DashboardPage() {
                               display: 'inline-block', marginRight: 8,
                               color: e.debit > 0 ? 'var(--primary)' : undefined,
                             }}>
-                              {esc(e.account_name || '')} {e.debit > 0 ? `借${e.debit}` : `贷${e.credit}`}
+                              {esc(e.account_name || '')} <span style={{fontSize:10,color:'var(--text-secondary)'}}>{e.currency || e.account_currency || ''}</span> {e.debit > 0 ? `借${e.debit}` : `贷${e.credit}`}
                             </span>
                           ))}
                         </td>

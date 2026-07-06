@@ -36,6 +36,16 @@ function makeClient(cfg: S3ConnectionConfig): AwsClient {
   });
 }
 
+/** aws4fetch 包装：禁止自动重定向，手动处理（解决 CDN/反代重定向循环） */
+async function s3Fetch(client: AwsClient, url: string, options: RequestInit = {}): Promise<Response> {
+  const res = await client.fetch(url, { ...options, redirect: 'manual' });
+  if ([301, 302, 307, 308].includes(res.status)) {
+    const loc = res.headers.get('location');
+    if (loc) return client.fetch(new URL(loc, url).href, { ...options, redirect: 'manual' });
+  }
+  return res;
+}
+
 async function resolveConfig(env: App['Bindings']): Promise<S3ConnectionConfig> {
   if (cachedConfig && (Date.now() - cachedConfig.timestamp) < CONFIG_CACHE_TTL) return cachedConfig.config;
   const bootstrap = bootstrapConfig(env);
@@ -50,7 +60,7 @@ async function resolveConfig(env: App['Bindings']): Promise<S3ConnectionConfig> 
   try {
     const client = makeClient(bootstrap);
     const url = `${bootstrap.endpoint}/${bootstrap.bucket}/_config/s3.json`;
-    const res = await client.fetch(url, { method: 'GET' });
+    const res = await s3Fetch(client, url, { method: 'GET' });
     if (res.ok) {
       const c: S3ConnectionConfig = await res.json();
       cachedConfig = { config: c, timestamp: Date.now() };
@@ -69,9 +79,9 @@ export async function saveRuntimeConfig(env: App['Bindings'], config: S3Connecti
   if (env.LEDGER_CONFIG) { try { await env.LEDGER_CONFIG.put(CONFIG_KV_KEY, body); ok = true; } catch {} }
   const b = bootstrapConfig(env);
   const oldClient = makeClient(b);
-  try { const r = await oldClient.fetch(`${b.endpoint}/${b.bucket}/_config/s3.json`, { method: 'PUT', body, headers: { 'Content-Type': 'application/json' } }); if (r.ok) ok = true; } catch {}
+  try { const r = await s3Fetch(oldClient, `${b.endpoint}/${b.bucket}/_config/s3.json`, { method: 'PUT', body, headers: { 'Content-Type': 'application/json' } }); if (r.ok) ok = true; } catch {}
   const newClient = makeClient(config);
-  try { const r = await newClient.fetch(`${config.endpoint}/${config.bucket}/_config/s3.json`, { method: 'PUT', body, headers: { 'Content-Type': 'application/json' } }); if (r.ok) ok = true; } catch {}
+  try { const r = await s3Fetch(newClient, `${config.endpoint}/${config.bucket}/_config/s3.json`, { method: 'PUT', body, headers: { 'Content-Type': 'application/json' } }); if (r.ok) ok = true; } catch {}
   cachedConfig = null;
   return ok;
 }
@@ -80,7 +90,7 @@ async function fetchJSON(cfg: S3ConnectionConfig, path: string, method: string, 
   const client = makeClient(cfg);
   const init: RequestInit = { method };
   if (body) { init.body = body; init.headers = { 'Content-Type': 'application/json' }; }
-  return client.fetch(`${cfg.endpoint}${path}`, init);
+  return s3Fetch(client, `${cfg.endpoint}${path}`, init);
 }
 
 export async function getJSON<T>(env: App['Bindings'], scope: string, type: string): Promise<T | null> {

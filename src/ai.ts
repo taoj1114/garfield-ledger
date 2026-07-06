@@ -30,6 +30,13 @@ async function getAiRuntimeConfig(env: App['Bindings']): Promise<AiRuntimeConfig
   };
 }
 
+/** 检查是否真正配置了 AI Key */
+export async function checkAiConfigured(env: App['Bindings']): Promise<boolean> {
+  const cfg = await getAiRuntimeConfig(env);
+  if (cfg.ai_provider === 'openai') return !!cfg.openai_api_key;
+  return !!cfg.gemini_api_key;
+}
+
 async function getChats(env: App['Bindings'], userId: string): Promise<ChatSession[]> {
   return (await getJSON<ChatSession[]>(env, userId, CHATS_FILE)) || [];
 }

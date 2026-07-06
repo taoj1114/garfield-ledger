@@ -91,12 +91,11 @@ export default function AccountsPage() {
             <h3 style={{ marginBottom: 12, fontSize: 15 }}>{g.label}</h3>
             <div className="table-wrapper">
               <table>
-                <thead><tr><th>名称</th><th>货币</th><th>状态</th><th>操作</th></tr></thead>
+                <thead><tr><th>名称</th><th>状态</th><th>操作</th></tr></thead>
                 <tbody>
                   {g.items.map(a => (
                     <tr key={a.id}>
                       <td data-label="名称">{esc(a.name)}</td>
-                      <td data-label="货币">{a.currency}</td>
                       <td data-label="状态">{a.is_active ? '✅ 启用' : '⛔ 停用'}</td>
                       <td data-label="操作">
                         <button className="btn btn-sm" onClick={() => openEdit(a)}>编辑</button>
@@ -130,23 +129,9 @@ export default function AccountsPage() {
                   {ACCOUNT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
-              <div className="form-group">
-                <label className="form-label">货币</label>
-                <select className="form-input" value={form.currency}
-                  onChange={(e: Event) => setForm({ ...form, currency: (e.target as HTMLSelectElement).value })}>
-                  <option value="CNY">CNY - 人民币</option>
-                  <option value="USD">USD - 美元</option>
-                  <option value="USDT">USDT - 泰达币</option>
-                  <option value="ETH">ETH - 以太坊</option>
-                  <option value="BTC">BTC - 比特币</option>
-                  <option value="HKD">HKD - 港币</option>
-                  <option value="JPY">JPY - 日元</option>
-                  <option value="EUR">EUR - 欧元</option>
-                </select>
-              </div>
               <div className="modal-actions">
                 <button type="button" className="btn" onClick={() => setShowForm(false)}>取消</button>
-                <button type="submit" className="btn btn-primary">保存</button>
+                <button type="submit" className="btn btn-primary">{editId ? '更新' : '创建'}</button>
               </div>
             </form>
           </div>

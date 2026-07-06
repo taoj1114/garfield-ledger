@@ -21,6 +21,7 @@ export interface Entry {
   account_id: string;
   debit: number;
   credit: number;
+  currency?: string;
   description?: string;
 }
 

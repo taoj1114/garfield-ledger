@@ -53,7 +53,7 @@ export async function refreshRates(env: App['Bindings']): Promise<Record<string,
   return rates;
 }
 
-/** 从多个免费 API 获取实时汇率 */
+/** 从多个免费 API 获取实时汇率（结果以 CNY 为基准：1 Currency = X CNY） */
 async function fetchRates(rates: Record<string, number>): Promise<void> {
   // 1. CoinGecko — 加密货币对 CNY 价格
   try {
@@ -63,13 +63,13 @@ async function fetchRates(rates: Record<string, number>): Promise<void> {
     );
     if (res.ok) {
       const data: Record<string, Record<string, number>> = await res.json();
-      if (data.bitcoin?.cny) rates.BTC = data.bitcoin.cny;
-      if (data.ethereum?.cny) rates.ETH = data.ethereum.cny;
-      if (data.tether?.cny) rates.USDT = data.tether.cny;
+      if (data.bitcoin?.cny) rates.BTC = data.bitcoin.cny;       // 1 BTC = X CNY
+      if (data.ethereum?.cny) rates.ETH = data.ethereum.cny;     // 1 ETH = X CNY
+      if (data.tether?.cny) rates.USDT = data.tether.cny;        // 1 USDT = X CNY
     }
-  } catch { /* 忽略，用 fallback */ }
+  } catch { /* 忽略 */ }
 
-  // 2. ExchangeRate-API — 法币对 USD
+  // 2. ExchangeRate-API — 法币 (base=USD, 返回 1 USD = X Others)
   try {
     const res = await fetch(
       'https://api.exchangerate-api.com/v4/latest/USD',
@@ -77,12 +77,15 @@ async function fetchRates(rates: Record<string, number>): Promise<void> {
     );
     if (res.ok) {
       const data: { rates: Record<string, number> } = await res.json();
-      const usdToCny = data.rates?.CNY || rates.CNY / rates.USD;
-      // 重新计算以 CNY 为基准
-      for (const cc of ['CNY', 'EUR', 'HKD', 'JPY']) {
-        if (data.rates[cc]) rates[cc] = data.rates[cc] * (1 / data.rates.USD) * usdToCny;
+      const cnyPerUsd = data.rates?.CNY; // 1 USD = X CNY
+      if (cnyPerUsd) {
+        rates.USD = cnyPerUsd;            // 1 USD = X CNY
+        rates.CNY = 1;                    // 基准
+        // 其他法币: 1 EUR = ? CNY → cnyPerUsd / data.rates.EUR
+        for (const cc of ['EUR', 'HKD', 'JPY']) {
+          if (data.rates[cc]) rates[cc] = cnyPerUsd / data.rates[cc];
+        }
       }
-      rates.USD = usdToCny;
     }
   } catch { /* 忽略 */ }
 }

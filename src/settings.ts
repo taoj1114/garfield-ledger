@@ -66,10 +66,10 @@ export async function updateSystemSettings(c: Context<App>) {
 function maskAiConfig(s: AppSettings) {
   return {
     ai_provider: s.ai_provider,
-    openai_api_key: s.openai_api_key ? s.openai_api_key.slice(0, 8) + '****' : undefined,
+    openai_api_key: s.openai_api_key,
     openai_base_url: s.openai_base_url,
     openai_model: s.openai_model,
-    gemini_api_key: s.gemini_api_key ? s.gemini_api_key.slice(0, 8) + '****' : undefined,
+    gemini_api_key: s.gemini_api_key,
     gemini_model: s.gemini_model,
   };
 }
@@ -113,13 +113,13 @@ export async function testAiConnection(c: Context<App>) {
   try {
     const client = createAiClient(c.env, await getAiSettings(c.env));
     const reply = await client.chat(
-      [{ role: 'user', content: '回复"AI 连接测试通过 ✅" 这六个字，不要其他内容。' }],
-      { temperature: 0.1, maxTokens: 50 },
+      [{ role: 'user', content: '回复"ok" 这一个字，不要其他内容。' }],
+      { temperature: 0.1, maxTokens: 200 },
     );
-    const passed = reply.includes('✅');
+    const passed = !!reply.trim();
     return c.json({
       success: passed,
-      data: { reply: reply.trim(), passed },
+      data: { reply: reply.trim().slice(0, 50), passed },
     });
   } catch (err) {
     return c.json({
@@ -167,13 +167,18 @@ export async function updateS3Config(c: Context<App>) {
     endpoint?: string; access_key_id?: string; secret_access_key?: string;
     region?: string; bucket?: string;
   }>();
-  if (!body.endpoint || !body.access_key_id || !body.secret_access_key || !body.bucket) {
-    return c.json({ success: false, error: '请填写 endpoint, access_key_id, secret_access_key, bucket' }, 400);
-  }
+  if (!body.endpoint) return c.json({ success: false, error: '请填写 endpoint' }, 400);
+  if (!body.access_key_id) return c.json({ success: false, error: '请填写 access_key_id' }, 400);
+  if (!body.bucket) return c.json({ success: false, error: '请填写 bucket' }, 400);
+
+  // 读取当前运行时配置（如果有），保留旧 secret
+  const current = await getJSON<S3ConnectionConfig>(c.env, '_config', 's3.json');
+  const secretKey = body.secret_access_key || current?.secretAccessKey || c.env.S3_SECRET_ACCESS_KEY;
+  if (!secretKey) return c.json({ success: false, error: '请填写 secret_access_key' }, 400);
   const config: S3ConnectionConfig = {
     endpoint: body.endpoint.replace(/\/+$/, ''),
     accessKeyId: body.access_key_id,
-    secretAccessKey: body.secret_access_key,
+    secretAccessKey: secretKey || '',
     region: body.region || 'auto',
     bucket: body.bucket,
   };
@@ -185,23 +190,45 @@ export async function updateS3Config(c: Context<App>) {
   if (!ok) return c.json({ success: false, error: '保存失败' }, 500);
   return c.json({ success: true, data: { source: 'runtime', ...config, secret_access_key: '********' } });
 }
-
+/** 用指定配置测试 S3 连接 */
 async function testConnectionWithConfig(config: S3ConnectionConfig): Promise<{ ok: boolean; error?: string }> {
   try {
     const client = new AwsClient({
-      accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey,
-      service: 's3', region: config.region,
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+      service: 's3',
+      region: config.region,
     });
     const testKey = `_config_validate_/test_${Date.now()}.json`;
-    const writeRes = await client.fetch(`${config.endpoint}/${config.bucket}/${testKey}`, {
-      method: 'PUT', body: JSON.stringify({ ping: true }), headers: { 'Content-Type': 'application/json' },
+    const url = `${config.endpoint}/${config.bucket}/${testKey}`;
+
+    // 写入（禁止自动跟随重定向，自己处理）
+    let writeRes = await client.fetch(url, {
+      method: 'PUT', body: JSON.stringify({ ping: true }),
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'manual',
     });
-    if (!writeRes.ok) return { ok: false, error: `写入测试文件失败 (${writeRes.status})` };
-    const readRes = await client.fetch(`${config.endpoint}/${config.bucket}/${testKey}`, { method: 'GET' });
-    if (!readRes.ok) return { ok: false, error: `读取测试文件失败 (${readRes.status})` };
+    if ([301, 302, 307, 308].includes(writeRes.status)) {
+      const loc = writeRes.headers.get('location');
+      if (loc) writeRes = await client.fetch(new URL(loc, url).href, {
+        method: 'PUT', body: JSON.stringify({ ping: true }),
+        headers: { 'Content-Type': 'application/json' },
+        redirect: 'manual',
+      });
+    }
+    if (!writeRes.ok) return { ok: false, error: `写入失败 (${writeRes.status})` };
+
+    // 读取
+    let readRes = await client.fetch(url, { method: 'GET', redirect: 'manual' });
+    if ([301, 302, 307, 308].includes(readRes.status)) {
+      const loc = readRes.headers.get('location');
+      if (loc) readRes = await client.fetch(new URL(loc, url).href, { method: 'GET', redirect: 'manual' });
+    }
+    if (!readRes.ok) return { ok: false, error: `读取失败 (${readRes.status})` };
     const data: { ping?: boolean } = await readRes.json();
     if (!data?.ping) return { ok: false, error: '内容校验失败' };
-    await client.fetch(`${config.endpoint}/${config.bucket}/${testKey}`, { method: 'DELETE' }).catch(() => {});
+
+    await client.fetch(url, { method: 'DELETE', redirect: 'manual' }).catch(() => {});
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };
@@ -214,10 +241,11 @@ async function testConnectionWithConfig(config: S3ConnectionConfig): Promise<{ o
 export async function testS3Connection(c: Context<App>) {
   const results: Record<string, unknown> = {};
   let allOk = true;
-  try { const ok = await healthCheck(c.env); results.health_check = ok; if (!ok) allOk = false; } catch (e) { results.health_check = false; allOk = false; }
-  try { const ok = await putJSON(c.env, '_test_', `ping_${Date.now()}.json`, { test: true }); results.write_test = ok; if (!ok) allOk = false; } catch (e) { results.write_test = false; allOk = false; }
-  try { const d = await getJSON<{ test: boolean }>(c.env, '_test_', `ping_${Date.now()}.json`); results.read_test = d?.test === true; if (!results.read_test) allOk = false; } catch { results.read_test = false; allOk = false; }
-  try { const keys = await listObjects(c.env, 'data/'); results.list_success = true; results.file_count = keys.length; } catch { results.list_success = false; allOk = false; }
+  const testId = `ping_${Date.now()}.json`;
+  try { const ok = await healthCheck(c.env); results.health_check = ok; if (!ok) allOk = false; } catch { results.health_check = false; allOk = false; }
+  try { const ok = await putJSON(c.env, '_test_', testId, { test: true }); results.write_test = ok; if (!ok) allOk = false; } catch { results.write_test = false; allOk = false; }
+  try { const d = await getJSON<{ test: boolean }>(c.env, '_test_', testId); results.read_test = d?.test === true; if (!results.read_test) allOk = false; } catch { results.read_test = false; allOk = false; }
+  try { const keys = await listObjects(c.env, '_test_'); results.list_success = true; results.file_count = keys.length; } catch { results.list_success = false; allOk = false; }
   return c.json({ success: allOk, data: { all_ok: allOk, results } });
 }
 

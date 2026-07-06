@@ -1,4 +1,4 @@
-import { useState } from 'preact/compat';
+import { useState, useRef } from 'preact/compat';
 import { analyzeImport, getAccounts, createTransaction } from '../api';
 
 interface AnalysisRecord {
@@ -18,6 +18,7 @@ interface AnalysisResult {
 }
 
 export default function AiImportPage() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [rawText, setRawText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -150,6 +151,43 @@ export default function AiImportPage() {
               {ex.label}
             </button>
           ))}
+          <div style={{ flex: 1 }} />
+          <input ref={fileInputRef} type="file" accept=".csv,.tsv,.txt,.json,.xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={(e: unknown) => {
+              const el = (e as Event).target as HTMLInputElement;
+              const f = el.files?.[0];
+              if (!f) return;
+              const ext = f.name.split('.').pop()?.toLowerCase();
+              if (ext === 'xlsx' || ext === 'xls') {
+                import('xlsx').then(mod => {
+                  const XLSX = mod.default || mod;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const wb = XLSX.read(reader.result as ArrayBuffer, { type: 'array' });
+                    let text = '';
+                    wb.SheetNames.forEach((name: string) => {
+                      const ws = wb.Sheets[name];
+                      const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+                      if (csv.trim()) text += `=== ${name} ===\n${csv}\n`;
+                    });
+                    setRawText(text);
+                    el.value = '';
+                  };
+                  reader.readAsArrayBuffer(f);
+                });
+              } else {
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setRawText(reader.result as string);
+                  el.value = '';
+                };
+                reader.readAsText(f, 'UTF-8');
+              }
+            }} />
+          <button className="btn btn-sm" onClick={() => fileInputRef.current?.click()}>
+            📁 上传文件
+          </button>
         </div>
 
         {/* 文本输入 */}

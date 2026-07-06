@@ -38,6 +38,7 @@ export default function SettingsPage() {
   const [testingAi, setTestingAi] = useState(false);
   const [savingAi, setSavingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState('');
+  const [showAiKey, setShowAiKey] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -147,7 +148,7 @@ export default function SettingsPage() {
       setAiGeminiKey(ai.gemini_api_key || '');
       setAiGeminiModel(ai.gemini_model || '');
       setHasAiKey(!!(ai.openai_api_key || ai.gemini_api_key));
-    } catch { /* env vars only, no runtime config yet */ }
+    } catch { /* env vars only */ }
   }
 
   async function handleSaveAi() {
@@ -337,9 +338,16 @@ export default function SettingsPage() {
           <>
             <div className="form-group">
               <label className="form-label">API Key</label>
-              <input className="form-input" type="password" value={aiOpenaiKey}
-                onInput={(e: Event) => setAiOpenaiKey((e.target as HTMLInputElement).value)}
-                placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'} />
+              <div style={{ display: 'flex', gap: 4 }}>
+                <input className="form-input" type={showAiKey ? 'text' : 'password'} value={aiOpenaiKey}
+                  onInput={(e: Event) => setAiOpenaiKey((e.target as HTMLInputElement).value)}
+                  placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'}
+                  style={{ flex: 1 }} />
+                <button type="button" className="btn btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                  style={{ minWidth: 40, fontSize: 16 }}>
+                  {showAiKey ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Base URL</label>
@@ -358,9 +366,16 @@ export default function SettingsPage() {
           <>
             <div className="form-group">
               <label className="form-label">API Key</label>
-              <input className="form-input" type="password" value={aiGeminiKey}
-                onInput={(e: Event) => setAiGeminiKey((e.target as HTMLInputElement).value)}
-                placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'} />
+              <div style={{ display: 'flex', gap: 4 }}>
+                <input className="form-input" type={showAiKey ? 'text' : 'password'} value={aiGeminiKey}
+                  onInput={(e: Event) => setAiGeminiKey((e.target as HTMLInputElement).value)}
+                  placeholder={hasAiKey ? '已配置，输入新值覆盖' : '必填'}
+                  style={{ flex: 1 }} />
+                <button type="button" className="btn btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                  style={{ minWidth: 40, fontSize: 16 }}>
+                  {showAiKey ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">模型</label>

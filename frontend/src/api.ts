@@ -87,9 +87,12 @@ export async function deleteAccount(id: string) {
   return request<void>('DELETE', `/accounts/${id}`);
 }
 
-// ---- 复式交易 ----
 export interface Entry {
   account_id: string;
+  account_name?: string;
+  account_currency?: string;
+  account_type?: string;
+  currency?: string;
   debit: number;
   credit: number;
   description?: string;
@@ -136,6 +139,7 @@ export async function deleteTransaction(id: string) {
 export interface AccountBalance {
   account: Account;
   balance: number;
+  currency: string;
 }
 
 export async function getBalances() {

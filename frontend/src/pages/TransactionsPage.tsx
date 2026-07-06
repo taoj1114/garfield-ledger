@@ -17,9 +17,9 @@ export default function TransactionsPage() {
   // 表单状态
   const [desc, setDesc] = useState('');
   const [ts, setTs] = useState('');
-  const [entries, setEntries] = useState<({ account_id: string; side: 'debit' | 'credit'; amount: number; desc: string })[]>([
-    { account_id: '', side: 'debit', amount: 0, desc: '' },
-    { account_id: '', side: 'credit', amount: 0, desc: '' },
+  const [entries, setEntries] = useState<({ account_id: string; side: 'debit' | 'credit'; amountStr: string; currency: string; desc: string })[]>([
+    { account_id: '', side: 'debit', amountStr: '', currency: '', desc: '' },
+    { account_id: '', side: 'credit', amountStr: '', currency: '', desc: '' },
   ]);
   const [error, setError] = useState('');
 
@@ -54,8 +54,8 @@ export default function TransactionsPage() {
     setDesc('');
     setTs(new Date().toISOString().slice(0, 10));
     setEntries([
-      { account_id: '', side: 'debit', amount: 0, desc: '' },
-      { account_id: '', side: 'credit', amount: 0, desc: '' },
+      { account_id: '', side: 'debit', amountStr: '', currency: '', desc: '' },
+      { account_id: '', side: 'credit', amountStr: '', currency: '', desc: '' },
     ]);
     setError('');
     setShowForm(true);
@@ -68,7 +68,8 @@ export default function TransactionsPage() {
     setEntries(txn.entries.map(e => ({
       account_id: e.account_id,
       side: e.debit > 0 ? 'debit' as const : 'credit' as const,
-      amount: e.debit > 0 ? e.debit : e.credit,
+      amountStr: String(e.debit > 0 ? e.debit : e.credit),
+      currency: e.currency || '',
       desc: e.description || '',
     })));
     setError('');
@@ -82,7 +83,7 @@ export default function TransactionsPage() {
   }
 
   function addRow() {
-    setEntries([...entries, { account_id: '', side: 'debit', amount: 0, desc: '' }]);
+    setEntries([...entries, { account_id: '', side: 'debit', amountStr: '', currency: '', desc: '' }]);
   }
 
   function removeRow(i: number) {
@@ -91,11 +92,11 @@ export default function TransactionsPage() {
   }
 
   function totalDebit() {
-    return entries.filter(e => e.side === 'debit').reduce((s, e) => s + e.amount, 0);
+    return entries.filter(e => e.side === 'debit').reduce((s, e) => s + (parseFloat(e.amountStr) || 0), 0);
   }
 
   function totalCredit() {
-    return entries.filter(e => e.side === 'credit').reduce((s, e) => s + e.amount, 0);
+    return entries.filter(e => e.side === 'credit').reduce((s, e) => s + (parseFloat(e.amountStr) || 0), 0);
   }
 
   const diff = Math.abs(totalDebit() - totalCredit());
@@ -106,7 +107,7 @@ export default function TransactionsPage() {
 
     if (!desc.trim()) { setError('请填写交易描述'); return; }
     if (entries.some(e => !e.account_id)) { setError('请为每条分录选择账户'); return; }
-    if (entries.some(e => e.amount <= 0)) { setError('金额必须大于 0'); return; }
+    if (entries.some(e => (parseFloat(e.amountStr) || 0) <= 0)) { setError('金额必须大于 0'); return; }
     if (diff > 0.001) { setError(`借贷不平衡: 借方 ${totalDebit()} ≠ 贷方 ${totalCredit()}`); return; }
 
     try {
@@ -115,8 +116,9 @@ export default function TransactionsPage() {
         timestamp: ts || new Date().toISOString(),
         entries: entries.map(e => ({
           account_id: e.account_id,
-          debit: e.side === 'debit' ? e.amount : 0,
-          credit: e.side === 'credit' ? e.amount : 0,
+          debit: e.side === 'debit' ? (parseFloat(e.amountStr) || 0) : 0,
+          credit: e.side === 'credit' ? (parseFloat(e.amountStr) || 0) : 0,
+          currency: e.currency || undefined,
           description: e.desc || undefined,
         })),
       };
@@ -183,7 +185,7 @@ export default function TransactionsPage() {
                     <td data-label="分录" style={{ fontSize: 12 }}>
                       {t.entries.map((e, i) => (
                         <div key={i} style={{ color: e.debit > 0 ? 'var(--primary)' : 'var(--danger)' }}>
-                          {esc(e.account_name || '?')} {e.debit > 0 ? `借 ${e.debit}` : `贷 ${e.credit}`}
+                          {esc(e.account_name || '?')} <span style={{fontSize:10,color:'var(--text-secondary)'}}>{e.currency || e.account_currency || ''}</span> {e.debit > 0 ? `借 ${e.debit}` : `贷 ${e.credit}`}
                         </div>
                       ))}
                     </td>
@@ -211,7 +213,7 @@ export default function TransactionsPage() {
               <div key={b.account.id} style={{
                 background: '#f1f5f9', borderRadius: 8, padding: '8px 16px', textAlign: 'center', minWidth: 100,
               }}>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{esc(b.account.name)}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{esc(b.account.name)} ({b.currency})</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: b.balance >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
                   {b.balance.toFixed(2)}
                 </div>
@@ -245,65 +247,90 @@ export default function TransactionsPage() {
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>分录 (至少一借一贷)</div>
               <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: 8 }}>
                 <table style={{ fontSize: 13 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 180 }}>账户</th>
-                      <th style={{ width: 60 }}>方向</th>
-                      <th style={{ width: 100 }}>金额</th>
-                      <th>备注</th>
-                      <th style={{ width: 40 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.map((e, i) => (
-                      <tr key={i}>
-                        <td>
-                          <select className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
-                            value={e.account_id}
-                            onChange={(ev: Event) => updateEntry(i, 'account_id', (ev.target as HTMLSelectElement).value)}>
-                            <option value="">-- 选择 --</option>
-                            <optgroup label="💳 资产">
-                              {assetAccounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.name} ({balanceFor(a.id).toFixed(1)})</option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="📈 收入">
-                              {incomeAccounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.name}</option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="📉 费用">
-                              {expenseAccounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.name}</option>
-                              ))}
-                            </optgroup>
-                          </select>
-                        </td>
-                        <td>
-                          <select className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
-                            value={e.side}
-                            onChange={(ev: Event) => updateEntry(i, 'side', (ev.target as HTMLSelectElement).value)}>
-                            <option value="debit">借</option>
-                            <option value="credit">贷</option>
-                          </select>
-                        </td>
-                        <td>
-                          <input type="number" className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
-                            step="0.01" min="0" value={e.amount || ''}
-                            onInput={(ev: Event) => updateEntry(i, 'amount', parseFloat((ev.target as HTMLInputElement).value) || 0)} />
-                        </td>
-                        <td>
-                          <input className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
-                            value={e.desc}
-                            onInput={(ev: Event) => updateEntry(i, 'desc', (ev.target as HTMLInputElement).value)} />
-                        </td>
-                        <td>
-                          {entries.length > 2 && (
-                            <button type="button" className="btn btn-sm btn-danger" onClick={() => removeRow(i)}>✕</button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+    <thead>
+      <tr>
+        <th style={{ width: 180 }}>账户</th>
+        <th style={{ width: 60 }}>方向</th>
+        <th style={{ width: 100 }}>金额</th>
+        <th style={{ width: 70 }}>货币</th>
+        <th>备注</th>
+        <th style={{ width: 40 }}></th>
+      </tr>
+    </thead>
+    <tbody>
+      {entries.map((e, i) => {
+        const selAccount = accounts.find(a => a.id === e.account_id);
+        const currency = selAccount?.currency || '';
+        return (
+          <tr key={i}>
+            <td>
+              <select className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
+                value={e.account_id}
+                onChange={(ev: Event) => updateEntry(i, 'account_id', (ev.target as HTMLSelectElement).value)}>
+                <option value="">-- 选择 --</option>
+                <optgroup label="💳 资产">
+                  {assetAccounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} ({balanceFor(a.id).toFixed(1)})</option>
+                  ))}
+                </optgroup>
+                <optgroup label="💰 收入">
+                  {incomeAccounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="📉 费用">
+                  {expenseAccounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </td>
+            <td>
+              <select className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
+                value={e.side}
+                onChange={(ev: Event) => updateEntry(i, 'side', (ev.target as HTMLSelectElement).value)}>
+                <option value="debit">借</option>
+                <option value="credit">贷</option>
+              </select>
+            </td>
+            <td>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input type="text" inputMode="decimal" className="form-input" style={{ padding: '4px 8px', fontSize: 12, flex: 1 }}
+                  value={e.amountStr}
+                  onInput={(ev: Event) => {
+                    const val = (ev.target as HTMLInputElement).value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) updateEntry(i, 'amountStr', val);
+                  }} />
+              </div>
+            </td>
+            <td>
+              <select className="form-input" style={{ padding: '4px 8px', fontSize: 12, width: '100%', minWidth: 60 }}
+                value={e.currency}
+                onChange={(ev: Event) => updateEntry(i, 'currency', (ev.target as HTMLSelectElement).value)}>
+                <option value="">默认</option>
+                <option value="CNY">CNY</option>
+                <option value="USD">USD</option>
+                <option value="USDT">USDT</option>
+                <option value="ETH">ETH</option>
+                <option value="BTC">BTC</option>
+                <option value="HKD">HKD</option>
+                <option value="JPY">JPY</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </td>
+            <td>
+              <input className="form-input" style={{ padding: '4px 8px', fontSize: 12 }}
+                value={e.desc}
+                onInput={(ev: Event) => updateEntry(i, 'desc', (ev.target as HTMLInputElement).value)} />
+            </td>
+            <td>
+              {entries.length > 2 && (
+                <button type="button" className="btn btn-sm btn-danger" onClick={() => removeRow(i)}>✕</button>
+              )}
+            </td>
+          </tr>
+        );
+      })}
                   </tbody>
                 </table>
               </div>
@@ -339,7 +366,7 @@ export default function TransactionsPage() {
 }
 
 /** 展示交易对余额的净影响 */
-function renderBalanceDiff(entries: (Entry & { account_name?: string })[]) {
+function renderBalanceDiff(entries: (Entry & { account_name?: string; account_currency?: string })[]) {
   const netParts = entries
     .filter(e => e.account_name)
     .map(e => {

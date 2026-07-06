@@ -74,7 +74,8 @@ export async function listTransactions(c: Context<App>) {
     entries: t.entries.map(e => ({
       ...e,
       account_name: accountMap.get(e.account_id)?.name || '未知',
-      account_type: accountMap.get(e.account_id)?.type || 'expense',
+      account_currency: accountMap.get(e.account_id)?.currency || '',
+      description: e.description || '',
     })),
   }));
 
@@ -138,7 +139,8 @@ export async function getTransaction(c: Context<App>) {
       entries: txn.entries.map(e => ({
         ...e,
         account_name: accountMap.get(e.account_id)?.name || '未知',
-        account_type: accountMap.get(e.account_id)?.type || 'expense',
+        account_currency: accountMap.get(e.account_id)?.currency || '',
+        description: e.description || '',
       })),
     },
   });
@@ -201,7 +203,8 @@ export async function getTransactionEntries(c: Context<App>) {
     data: txn.entries.map(e => ({
       ...e,
       account_name: accountMap.get(e.account_id)?.name || '未知',
-      account_type: accountMap.get(e.account_id)?.type || 'expense',
+      account_currency: accountMap.get(e.account_id)?.currency || '',
+      description: e.description || '',
     })),
   });
 }
