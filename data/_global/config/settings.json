@@ -1,0 +1,9 @@
+{
+  "backup_folder": "backup",
+  "cache_enabled": true,
+  "updated_at": "2026-07-06T05:22:50.573Z",
+  "ai_provider": "openai",
+  "openai_api_key": "sk-vA1iH3nkU5hqcxW3XPrBtBaz3L4vOdN4RB3u0LjoFJguwVaHHBA4vm759gkywSop",
+  "openai_base_url": "https://opencode.ai/zen/go/v1",
+  "openai_model": "deepseek-v4-flash"
+}
